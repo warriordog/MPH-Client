@@ -1,0 +1,48 @@
+{
+  "config_version": 0,
+  "settings": {
+    "api_key": "",
+    "switch_interval": 60,
+    "network_timeout": 60 
+  },
+  "workers": [
+    {
+      "name": "NVidia GPUs",
+      "id": "worker_nvidia",
+      "algorithms": [
+        {
+          "name": "Equihash",
+          "id": "zcash",
+          "rate": 300,
+          "miners": [
+            {
+              "name": "CCMiner",
+              "path": "miners/ccminer",
+              "exec": "ccminer-x64",
+              "args": "-r 0 -T $$TIMEOUT -a equihash -o stratum+tcp://$$HOST:$$PORT -u $$WORKER_ID -p z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CPUs",
+      "id": "worker_cpu",
+      "algorithms": [
+        {
+          "name": "Monero",
+          "id": "monero",
+          "rate": 100,
+          "miners": [
+            {
+              "name": "XMR Stak",
+              "path": "miners/xmr-stak",
+              "exec": "xmr-stak",
+              "args": "--noAMD --noNVIDIA -o $$HOST:$$PORT -u $$WORKER_ID -p z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
