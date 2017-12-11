@@ -15,7 +15,7 @@ def loadConfig(cfgfile)
             # debug print json
             #pp json
             # check version
-            if (json['config_version'] == 0)
+            if (json['config_version'] == 1)
                 # TODO return a class instead
                 return json
             else 

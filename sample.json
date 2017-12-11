@@ -1,10 +1,12 @@
 {
-  "config_version": 0,
+  "config_version": 1,
   "settings": {
     "api_key": "",
     "account": "acomputerdog",
     "switch_interval": 60,
-    "network_timeout": 60
+    "network_timeout": 60,
+    "log_to_file": true,
+    "log_level": "DEBUG"
   },
   "workers": [
     {
