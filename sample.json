@@ -2,45 +2,44 @@
   "config_version": 0,
   "settings": {
     "api_key": "",
+    "account": "acomputerdog",
     "switch_interval": 60,
-    "network_timeout": 60 
+    "network_timeout": 60
   },
   "workers": [
     {
       "name": "NVidia GPUs",
       "id": "worker_nvidia",
+      "profit_field": "profit",
       "algorithms": [
         {
           "name": "Equihash",
-          "id": "zcash",
+          "coins": ["zcash"],
           "rate": 300,
-          "miners": [
-            {
-              "name": "CCMiner",
-              "path": "miners/ccminer",
-              "exec": "ccminer-x64",
-              "args": "-r 0 -T $$TIMEOUT -a equihash -o stratum+tcp://$$HOST:$$PORT -u $$WORKER_ID -p z"
-            }
-          ]
+          "miner":{
+            "name": "CCMiner",
+            "path": "miners/ccminer",
+            "exec": "ccminer-x64",
+            "args": "-r 0 -T $$TIMEOUT -a equihash -o stratum+tcp://$$HOST:$$PORT -u $$ACCOUNT.$$WORKER_ID -p z"
+          }
         }
       ]
     },
     {
       "name": "CPUs",
       "id": "worker_cpu",
+      "profit_field": "profit",
       "algorithms": [
         {
           "name": "Monero",
-          "id": "monero",
+          "coins": ["monero"],
           "rate": 100,
-          "miners": [
-            {
-              "name": "XMR Stak",
-              "path": "miners/xmr-stak",
-              "exec": "xmr-stak",
-              "args": "--noAMD --noNVIDIA -o $$HOST:$$PORT -u $$WORKER_ID -p z"
-            }
-          ]
+          "miner": {
+            "name": "XMR Stak",
+            "path": "miners/xmr-stak",
+            "exec": "xmr-stak",
+            "args": "--noAMD --noNVIDIA -o $$HOST:$$PORT -u $$ACCOUNT.$$WORKER_ID -p z"
+          }
         }
       ]
     }
