@@ -46,12 +46,13 @@ class Worker
         @profitField = profitField
         
         @algos = loadAlgorithms(algorithms)
+        @logger = Log.createLogger("miner." + @name, true, true)
         
         @executor = nil
     end
     
     # Add getters
-    attr_reader :name, :id, :profitField, :algos, :executor
+    attr_reader :name, :id, :profitField, :algos, :logger, :executor
     
     # Find the profit for a specified coin
     def calcProfit(coin)
@@ -60,7 +61,7 @@ class Worker
             return coin[@profitField] * algo.rate;
         else
             # Should not happen, but -1 profit if we don't have an algorithm for that coin
-            puts "Error: filter did not exclude coin '#{coin['coin_name']}' from worker '#{@id}'"
+            @logger.warn("Filter did not exclude coin '#{coin['coin_name']}' from worker '#{@id}'")
             return -1
         end
     end
@@ -78,11 +79,11 @@ class Worker
             # Run algorithm
             # TODO get rid of duplicate code
             if (@executor == nil)
-                puts "Switching to #{coinName}"
+                @logger.info("Switching to #{coinName}")
                 @executor = Executor.new()
                 @executor.start(algo, settings, self, coin)
             elsif (@executor.algorithm != algo)
-                puts "Switching to #{coinName}"
+                @logger.info("Switching to #{coinName}")
                 @executor.stop()
                 @executor = Executor.new()
                 @executor.start(algo, settings, self, coin)
