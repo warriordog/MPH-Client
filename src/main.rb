@@ -70,7 +70,7 @@ if (ARGV.length > 0)
             end
         
             # Load workers
-            workers = loadWorkers(Config.workers)
+            workers = Wkr.loadWorkers(Config.workers)
             
             # Start mining
             runMainLoop(workers)
