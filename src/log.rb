@@ -35,7 +35,7 @@ module Log
     end
 
     def self.createLogPath(logDir, name)
-        if (!Dir.exists?(logDir))
+        if (!Dir.exist?(logDir))
             Dir.mkdir(logDir)
         end
         return "#{logDir}/#{name}.log"

@@ -11,14 +11,14 @@ class Executor
     
     attr_reader :algorithm, :coin, :running
     
-    def start(algorithm, settings, worker, coin)
+    def start(algorithm, worker, coin)
         @running = true
         
         # don't start if already running
         if (@pid == nil)
             @algorithm = algorithm
             # Create subprocess (INSECURE - uses shell, so don't pass any external data in.
-            cmd = "./#{@algorithm.miner.exec} #{@algorithm.miner.args(settings, worker, coin)}"
+            cmd = "./#{@algorithm.miner.exec} #{@algorithm.miner.args(worker, coin)}"
             @pid = spawn(cmd, :chdir => @algorithm.miner.path)
         end
     end

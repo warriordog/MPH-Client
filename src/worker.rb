@@ -14,15 +14,13 @@ class Miner
     
     attr_reader :name, :path, :exec
     
-    def args(settings, worker, coin)
-        # Expand macros in args
-        pp settings
+    def args(worker, coin)
         return @args
-            .gsub("$$TIMEOUT", settings['switch_interval'].to_s)
+            .gsub("$$TIMEOUT", Config.settings['switch_interval'].to_s)
             .gsub("$$HOST", coin['direct_mining_host'].to_s)
             .gsub("$$PORT", coin['port'].to_s)
             .gsub("$$WORKER_ID", worker.id.to_s)
-            .gsub("$$ACCOUNT", settings['account'].to_s)
+            .gsub("$$ACCOUNT", Config.settings['account'].to_s)
         ;
     end
 end
@@ -67,7 +65,7 @@ class Worker
     end
     
     # Switch currently running algorithm based on current profit statistics
-    def switchAlgo(settings, stats)
+    def switchAlgo(stats)
         # only include coins that we have miners for, then sort by descending profit
         coins = stats.select {|coin| @algos.any?{|algo| algo.coins.include?(coin['coin_name'])}}.sort {|a, b| calcProfit(b) <=> calcProfit(a)}
         if (coins.length > 0)
@@ -81,12 +79,12 @@ class Worker
             if (@executor == nil)
                 @logger.info("Switching to #{coinName}")
                 @executor = Executor.new()
-                @executor.start(algo, settings, self, coin)
+                @executor.start(algo, self, coin)
             elsif (@executor.algorithm != algo)
                 @logger.info("Switching to #{coinName}")
                 @executor.stop()
                 @executor = Executor.new()
-                @executor.start(algo, settings, self, coin)
+                @executor.start(algo, self, coin)
             end
         else
             puts "Error: no valid coins for worker #{@name}!"
