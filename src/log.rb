@@ -68,7 +68,4 @@ module Log
         logDev = createLogDev(logger.progname, toFile, toConsole)
         logger.reopen(logDev)
     end
-    
-    # Global logger
-    Global = createLogger('?', false, true)
 end
