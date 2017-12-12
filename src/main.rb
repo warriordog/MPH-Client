@@ -24,7 +24,7 @@ def runMainLoop(workers)
         logger.debug("Coin switch thread started - will update all miners every #{Config.settings['switch_interval']} seconds.")
         while running
             # download stats
-            stats = mph_getMiningAndProfitsStatistics()
+            stats = MPH.getMiningAndProfitsStatistics()
             
             # check stats
             if (stats != nil)
