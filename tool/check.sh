@@ -9,10 +9,10 @@ dir="../src"
 
 # Read arguments    
 if [ $# -gt 0 ]; then
-    $dir = $1
+    dir=$1
 fi
 if [ $# -gt 1 ]; then
-    $pattern = $2
+    pattern=$2
 fi
 
 # Find files
