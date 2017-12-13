@@ -32,8 +32,15 @@ class Executor
 
             # Adpated from https://ruby-doc.org/stdlib-2.2.3/libdoc/pty/rdoc/PTY.html
             master, slave = PTY.open
+<<<<<<< HEAD
             @pid = spawn(cmd, :chdir => @algorithm.miner.path, :in=>slave, :out=>slave, :err=>slave)
             slave.close    # Don't need the slave
+=======
+            #stdout, stdin = IO.pipe # Keep this pipe to trap keyboard input from going to miners
+            @pid = spawn(cmd, :chdir => @algorithm.miner.path, :in=>slave, :out=>slave, :err=>slave)
+            slave.close    # Don't need the slave
+            #stdout.close   # Don't need stdout (it goes to PTY)
+>>>>>>> 645712be29ef355342653b39390d5037fe17d7c2
 
             @running = true
 
