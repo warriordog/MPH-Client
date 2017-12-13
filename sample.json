@@ -21,7 +21,7 @@
           "miner":{
             "name": "CCMiner",
             "path": "miners/ccminer",
-            "exec": "ccminer-x64",
+            "exec": "./ccminer-x64",
             "args": "-r 0 -T $$TIMEOUT -a equihash -o stratum+tcp://$$HOST:$$PORT -u $$ACCOUNT.$$WORKER_ID -p z"
           }
         }
@@ -39,7 +39,7 @@
           "miner": {
             "name": "XMR Stak",
             "path": "miners/xmr-stak",
-            "exec": "xmr-stak",
+            "exec": "./xmr-stak",
             "args": "--noAMD --noNVIDIA -o $$HOST:$$PORT -u $$ACCOUNT.$$WORKER_ID -p z"
           }
         }

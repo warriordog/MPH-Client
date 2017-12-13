@@ -45,7 +45,7 @@ module Wkr
             @profitField = profitField
             
             @algos = Wkr.loadAlgorithms(algorithms)
-            @logger = Log.createLogger("miner." + @name, true, true)
+            @logger = Log.createLogger("worker." + @name, true, true)
             
             @executor = nil
         end
