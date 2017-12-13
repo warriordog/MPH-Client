@@ -18,8 +18,8 @@ module Wkr
         def args(worker, coin)
             return @args
                 .gsub("$$TIMEOUT", Config.settings[:switch_interval].to_s)
-                .gsub("$$HOST", coin['direct_mining_host'].to_s)
-                .gsub("$$PORT", coin['port'].to_s)
+                .gsub("$$HOST", coin[:direct_mining_host].to_s)
+                .gsub("$$PORT", coin[:port].to_s)
                 .gsub("$$WORKER_ID", worker.id.to_s)
                 .gsub("$$ACCOUNT", Config.settings[:account].to_s)
             ;
@@ -55,12 +55,12 @@ module Wkr
         
         # Find the profit for a specified coin
         def calcProfit(coin)
-            algo = @algos.find {|alg| alg.coins.contains(coin['coin_name'])}
+            algo = @algos.find {|alg| alg.coins.contains(coin[:coin_name])}
             if (algo != nil)
                 return coin[@profitField] * algo.rate;
             else
                 # Should not happen, but -1 profit if we don't have an algorithm for that coin
-                @logger.warn("Filter did not exclude coin '#{coin['coin_name']}' from worker '#{@id}'")
+                @logger.warn("Filter did not exclude coin '#{coin[:coin_name]}' from worker '#{@id}'")
                 return -1
             end
         end
@@ -68,11 +68,11 @@ module Wkr
         # Switch currently running algorithm based on current profit statistics
         def switchAlgo(stats)
             # only include coins that we have miners for, then sort by descending profit
-            coins = stats.select {|coin| @algos.any?{|algo| algo.coins.include?(coin['coin_name'])}}.sort {|a, b| calcProfit(b) <=> calcProfit(a)}
+            coins = stats.select {|coin| @algos.any?{|algo| algo.coins.include?(coin[:coin_name])}}.sort {|a, b| calcProfit(b) <=> calcProfit(a)}
             if (coins.length > 0)
                 # First should be most profitable
                 coin = coins[0]
-                coinName = coin['coin_name']
+                coinName = coin[:coin_name]
                 algo = @algos.find {|alg| alg.coins.include?(coinName)}
                 
                 # Run algorithm

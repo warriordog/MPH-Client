@@ -24,7 +24,7 @@ class Executor
             @algorithm = algorithm
             @logger = worker.logger
             
-            @logger.info("Starting #{@algorithm.miner.name} on #{coin['coin_name']}.")
+            @logger.info("Starting #{@algorithm.miner.name} on #{coin[:coin_name]}.")
        
             # Create subprocess (INSECURE - uses shell, so don't pass any external data in.
             cmd = "#{@algorithm.miner.exec} #{@algorithm.miner.args(worker, coin)}"
@@ -90,11 +90,11 @@ class Executor
     
     def stop()
         if (alive())
-            @logger.info("Termining #{minerName}...")
+            @logger.info("Termining #{@algorithm.miner.name}...")
             # Kill process
             Process.kill("TERM", @pid)
             Process.wait(@pid)
-            @logger.info("#{minerName} stopped.")
+            @logger.info("#{@algorithm.miner.name} stopped.")
         end
         @logger = nil
         @pid = nil

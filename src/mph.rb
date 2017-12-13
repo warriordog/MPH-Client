@@ -19,15 +19,15 @@ module MPH
             json = Net::HTTP.get(uri)
             
             # Parse json
-            resp = JSON.parse(json)
+            resp = JSON.parse(json, :symbolize_names => true)
             
             # Check for success
-            if (resp['success'] == true)
+            if (resp[:success] == true)
                 # if "return" is missing, then this will just return nil, which is the error status anyway
-                return resp['return']
+                return resp[:return]
             else
                 # Return nil if server had error
-                puts "Server error in getminingandprofitsstatistics: '#{resp['return']}'"
+                puts "Server error in getminingandprofitsstatistics: '#{resp[:return]}'"
                 return nil
             end
         # TODO proper error checking
