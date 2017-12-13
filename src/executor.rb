@@ -32,10 +32,8 @@ class Executor
 
             # Adpated from https://ruby-doc.org/stdlib-2.2.3/libdoc/pty/rdoc/PTY.html
             master, slave = PTY.open
-            stdout, stdin = IO.pipe # Keep this pipe to trap keyboard input from going to miners
-            @pid = spawn(cmd, :chdir => @algorithm.miner.path, :in=>stdout, :out=>slave, :err=>slave)
+            @pid = spawn(cmd, :chdir => @algorithm.miner.path, :in=>slave, :out=>slave, :err=>slave)
             slave.close    # Don't need the slave
-            stdout.close   # Don't need stdout (it goes to PTY)
 
             @running = true
 
@@ -51,6 +49,7 @@ class Executor
                     @logger.warn("Exception in read thread: #{e}")
                 ensure
                     @running = false
+                    master.close()
                     @logger.info("Process ended.")
                 end
             }
