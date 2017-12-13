@@ -25,7 +25,7 @@ module MPHClient
         timerThread = Thread.new {
             logger = Log.createLogger("switch_timer", true, true)
             
-            logger.debug("Coin switch thread started - will update all miners every #{Config.settings['switch_interval']} seconds.")
+            logger.debug("Coin switch thread started - will update all miners every #{Config.settings[:switch_interval]} seconds.")
             while running
                 # download stats
                 stats = MPH.getMiningAndProfitsStatistics()
@@ -40,7 +40,7 @@ module MPHClient
                 end
                 
                 # Only change every n seconds
-                sleep(Config.settings['switch_interval'])
+                sleep(Config.settings[:switch_interval])
             end
         }
         
@@ -62,10 +62,10 @@ module MPHClient
                 if (Config.cfg != nil)            
                     # Set up logging
                     RootLog.progname = "root"
-                    if (Config.settings['log_to_file'] == true)
+                    if (Config.settings[:log_to_file] == true)
                         Log.changeLogMode(RootLog, true, true)
                     end
-                    logLevel = Logger::Severity.const_get(Config.settings['log_level'])
+                    logLevel = Logger::Severity.const_get(Config.settings[:log_level])
                     if (logLevel != nil)
                         RootLog.level = logLevel
                     end

@@ -17,11 +17,11 @@ module Wkr
         
         def args(worker, coin)
             return @args
-                .gsub("$$TIMEOUT", Config.settings['switch_interval'].to_s)
+                .gsub("$$TIMEOUT", Config.settings[:switch_interval].to_s)
                 .gsub("$$HOST", coin['direct_mining_host'].to_s)
                 .gsub("$$PORT", coin['port'].to_s)
                 .gsub("$$WORKER_ID", worker.id.to_s)
-                .gsub("$$ACCOUNT", Config.settings['account'].to_s)
+                .gsub("$$ACCOUNT", Config.settings[:account].to_s)
             ;
         end
     end
@@ -103,17 +103,17 @@ module Wkr
 
     def self.loadWorkers(arr)
         workers = []
-        arr.each {|wkr| workers << Worker.new(wkr['name'], wkr['id'], wkr['profit_field'], wkr['algorithms'])}
+        arr.each {|wkr| workers << Worker.new(wkr[:name], wkr[:id], wkr[:profit_field], wkr[:algorithms])}
         return workers
     end
 
     def self.loadAlgorithms(arr)
         algs = []
-        arr.each {|alg| algs << Algorithm.new(alg['name'], alg['coins'], alg['rate'], alg['miner'])}
+        arr.each {|alg| algs << Algorithm.new(alg[:name], alg[:coins], alg[:rate], alg[:miner])}
         return algs
     end
 
     def self.createMiner(hash)
-        return Miner.new(hash['name'], hash['path'], hash['exec'], hash['args'])
+        return Miner.new(hash[:name], hash[:path], hash[:exec], hash[:args])
     end
 end

@@ -18,14 +18,14 @@ module Config
         file = IO.read(cfgfile)
         if (file != nil)
             # Convert to hash
-            json = JSON.parse(file)
+            json = JSON.parse(file, :symbolize_names => true)
             if (json != nil)
                 # check version
-                if (json['config_version'] == 1)
+                if (json[:config_version] == 1)
                     # save config
                     @@cfg = json
-                    @@settings = json['settings']
-                    @@workers = json['workers']
+                    @@settings = json[:settings]
+                    @@workers = json[:workers]
                 else 
                     # TODO upgrade config
                     puts "Outdated config file, please update to continue."
