@@ -28,6 +28,7 @@ class Executor
        
             # Create subprocess (INSECURE - uses shell, so don't pass any external data in.
             cmd = "#{@algorithm.miner.exec} #{@algorithm.miner.args(worker, coin)}"
+            #cmd = "ping www.google.com"
 
             # Adpated from https://ruby-doc.org/stdlib-2.2.3/libdoc/pty/rdoc/PTY.html
             master, slave = PTY.open
@@ -38,15 +39,21 @@ class Executor
 
             @running = true
 
-            readThread = Thread.new {
-                # Read until pipe closes
-                until (rawLine = master.gets).nil? do
-                    line = rawLine.chomp() # Get rid of trailing newline
-                    @logger.info(line)
+            # Thread to read from process
+            Thread.new {
+                begin
+                    # Read until pipe closes
+                    until (rawLine = master.gets()).nil? do
+                        line = rawLine.chomp() # Get rid of trailing newline
+                        @logger.info(line)
+                    end
+                rescue e
+                    @logger.warn("Exception in read thread: #{e}")
+                ensure
+                    @running = false
+                    @logger.info("Process ended.")
                 end
-                @logger.debug("Read thread ended")
             }
-
 # This method doesn't work for programs that use TTYs
 =begin
             # Start the process
