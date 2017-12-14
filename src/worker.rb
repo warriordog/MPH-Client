@@ -131,8 +131,16 @@ module Wkr
             if (algo != nil)
                 wkrMiners = algo.wkrMiners
                 if (!wkrMiners.empty?)
+                    statProfit = statCoin[@profitField.to_sym].to_f
+                    wkrMiners.each {|m| 
+                        gRate = m.rate.to_f / 1000000000.0
+                        prof = m.rate.to_f * statProfit
+                        gProf = gRate * statProfit
+                        @logger.debug("Profit for #{statCoin[:coinName]} on #{m.miner.id}:  #{statProfit} * #{m.rate}H/s (#{gRate}GH/s) = #{prof} (#{gProf}))")
+                    }
+                    rate = wkrMiners[0].rate.to_f
                     # Calculate profit by (profit_field * best rate)
-                    return statCoin[@profitField.to_sym].to_f * wkrMiners[0].rate.to_f;
+                    return statProfit * rate;
                 else
                     @logger.error("No miners for coin #{statCoin[:coin_name]}")
                 end
