@@ -24,14 +24,15 @@ module Miners
         attr_reader :id, :name, :path, :exec
         
         def args(job)
+            # Not the most efficient way to do this, but this method is infrequently called 
             return @args
-                .gsub("$$TIMEOUT", Config.settings[:switch_interval].to_s)
-                .gsub("$$HOST", job.host.addr.to_s)
-                .gsub("$$PORT", job.host.port.to_s)
-                .gsub("$$WORKER_ID", job.worker.id.to_s)
-                .gsub("$$ACCOUNT", Config.settings[:account].to_s)
-                .gsub("$$COIN", job.coin.id.to_s)
-                .gsub("$$ALGORITHM", job.algorithm.id.to_s)
+                .gsub("#TIMEOUT#", Config.settings[:switch_interval].to_s)
+                .gsub("#HOST#", job.host.addr.to_s)
+                .gsub("#PORT#", job.host.port.to_s)
+                .gsub("#WORKER_ID#", job.worker.id.to_s)
+                .gsub("#ACCOUNT#", Config.settings[:account].to_s)
+                .gsub("#COIN#", job.coin.id.to_s)
+                .gsub("#ALGORITHM#", job.algorithm.id.to_s)
             ;
         end
         

@@ -1,5 +1,5 @@
 {
-  "config_version": 2,
+  "config_version": 3,
   "settings": {
     "api_key": "",
     "account": "",
@@ -70,14 +70,14 @@
       "name": "XMR-stak",
       "path": "miners/xmr-stak",
       "exec": "./xmr-stak",
-      "args": "--noAMD --noNVIDIA --currency $$COIN -o $$HOST:$$PORT -u $$ACCOUNT.$$WORKER_ID -p z"
+      "args": "--noAMD --noNVIDIA --currency #COIN# -o #HOST#:#PORT# -u #ACCOUNT#.#WORKER_ID# -p z"
     },
     {
       "id": "ccminer",
       "name": "CCMiner",
       "path": "miners/ccminer",
       "exec": "./ccminer-x64",
-      "args": "-r 0 -T $$TIMEOUT -a $$ALGORITHM -o stratum+tcp://$$HOST:$$PORT -u $$ACCOUNT.$$WORKER_ID -p z"
+      "args": "-r 0 -T #TIMEOUT# -a #ALGORITHM# -o stratum+tcp://#HOST#:#PORT# -u #ACCOUNT#.#WORKER_ID# -p z"
     }
   ],
   "workers": [
