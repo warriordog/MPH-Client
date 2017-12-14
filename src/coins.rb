@@ -2,6 +2,8 @@
 # Coins and algorithms
 #----------------------
 
+require_relative('log')
+
 module Coins
     # Module logger
     @@logger = Log.createLogger("Coins", true, true)

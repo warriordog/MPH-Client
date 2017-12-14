@@ -5,6 +5,8 @@
 require_relative('log')
 require_relative('executor')
 require_relative('coins')
+require_relative('config')
+require_relative('miners')
 
 module Wkr
 
@@ -151,11 +153,9 @@ module Wkr
             ;
             
             # Make sure there was at least one good coin
-            
             if (!statCoins.empty?)
                 # First should be most profitable
                 statCoin = statCoins[0]
-                
                 coinName = statCoin[:coin_name]
                 
                 # Lokup matching coin
@@ -209,6 +209,7 @@ module Wkr
         end
     end
 
+    # Loads all workers from config file
     def self.loadWorkers()
         workers = []
         Config.workers.each {|wkr| workers << Worker.createFromJSON(wkr)}

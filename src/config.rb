@@ -2,6 +2,8 @@
 # Config file loader
 #--------------------
 
+require 'json'
+
 module Config
     # Config file instance
     @@cfg = nil
@@ -18,7 +20,6 @@ module Config
     # Workers hash
     @@workers = nil
 
-    # TODO use symbols instead of strings for performance
     def self.loadConfig(cfgfile)
         # Read as json string
         file = IO.read(cfgfile)

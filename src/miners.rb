@@ -2,6 +2,9 @@
 # Coins miners
 #--------------
 
+require_relative('log')
+require_relative('config')
+
 module Miners
     # Module logger
     @@logger = Log.createLogger("Miners")

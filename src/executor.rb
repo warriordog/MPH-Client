@@ -2,9 +2,12 @@
 # Executes a miner in a different process
 #-----------------------------------------
 
-#require 'open3'
 # Have to use PTYs because *SOME* miners don't know how to talk to a pipe
 require 'pty'
+
+# Not required, because worker requires this
+#require_relative('worker')
+require_relative('log')
 
 class Executor
     def initialize()
