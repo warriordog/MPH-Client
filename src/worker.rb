@@ -132,12 +132,6 @@ module Wkr
                 wkrMiners = algo.wkrMiners
                 if (!wkrMiners.empty?)
                     statProfit = statCoin[@profitField.to_sym].to_f
-                    wkrMiners.each {|m| 
-                        gRate = m.rate.to_f / 1000000000.0
-                        prof = m.rate.to_f * statProfit
-                        gProf = gRate * statProfit
-                        @logger.debug("Profit for #{statCoin[:coinName]} on #{m.miner.id}:  #{statProfit} * #{m.rate}H/s (#{gRate}GH/s) = #{prof} (#{gProf}))")
-                    }
                     rate = wkrMiners[0].rate.to_f
                     # Calculate profit by (profit_field * best rate)
                     return statProfit * rate;
@@ -160,6 +154,18 @@ module Wkr
                 .select {|statCoin| @algos.any?{|id, wkrAlgo| wkrAlgo.algorithm.supportsCoin?(statCoin[:coin_name])}}
                 .sort {|a, b| calcProfit(b) <=> calcProfit(a)}
             ;
+            
+            # Debug print profit
+            statCoins.each {|statCoin|
+                statProfit = statCoin[@profitField.to_sym]
+                wkrMiners = @algos[Coins.coins[statCoin[:coin_name]].algorithm.id].wkrMiners
+                wkrMiners.each {|m| 
+                    gRate = m.rate.to_f / 1000000000.0
+                    prof = m.rate.to_f * statProfit
+                    gProf = gRate * statProfit
+                    @logger.debug("Profit for #{statCoin[:coin_name]} on #{m.miner.id}:  #{statProfit} * #{m.rate}H/s (#{gRate}GH/s) = #{prof} (#{gProf}))")
+                }
+            }
             
             # Make sure there was at least one good coin
             if (!statCoins.empty?)
