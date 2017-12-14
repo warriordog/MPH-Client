@@ -17,18 +17,18 @@ require_relative 'coins'
 require_relative 'miners'
 
 module MPHClient
-    # Global logger
-    RootLog = Log.createLogger('?', false, true)
+    # Global logger (default creation is temporary until config is loaded)
+    @@rootLog = Log.createLogger('?', false, true)
 
     def self.runMainLoop(workers)
         running = true
 
         # setup coin change timer
         timerThread = Thread.new {
-            logger = Log.createLogger("switch_timer", true, true)
+            logger = Log.createLogger("SwitchTimer")
             
             logger.debug("Coin switch thread started - will update all miners every #{Config.settings[:switch_interval]} seconds.")
-            while running
+            while (running)
                 # download stats
                 stats = MPH.getMiningAndProfitsStatistics()
                 
@@ -54,7 +54,7 @@ module MPHClient
     
     def self.start()
         # Print version
-        RootLog.info("MPH-Client v0.0.0 (development)")
+        @@rootLog.info("MPH-Client v0.0.0 (development)")
 
         # Load config
         if (ARGV.length > 0)
@@ -63,14 +63,11 @@ module MPHClient
                 Config.loadConfig(configFile)
                 if (Config.cfg != nil)            
                     # Set up logging
-                    RootLog.progname = "root"
-                    if (Config.settings[:log_to_file] == true)
-                        Log.changeLogMode(RootLog, true, true)
-                    end
-                    logLevel = Logger::Severity.const_get(Config.settings[:log_level])
-                    if (logLevel != nil)
-                        RootLog.level = logLevel
-                    end
+                    Log.defaultLogToFile = Config.settings[:log_to_file]
+                    Log.defaultMinLevel = Logger::Severity.const_get(Config.settings[:log_level])
+                    
+                    # Create "real" root logger
+                    @@rootLog = Log.createLogger("root")
                 
                     # Load coins and algorithms
                     Coins.loadAlgorithms()
@@ -82,16 +79,21 @@ module MPHClient
                     workers = Wkr.loadWorkers()
                     
                     # Start mining
+                    @@rootLog.info("Starting mine cycle.")
                     runMainLoop(workers)
                 else
-                    RootLog.fatal("Error: failed to load config file.  Please check for errors!")
+                    @@rootLog.fatal("Failed to load config file.  Please check for errors!")
                 end
             else
-                RootLog.fatal("Error: config file '#{configFile}' does not exist.")
+                @@rootLog.fatal("Config file '#{configFile}' does not exist.")
             end
         else
-            RootLog.info("Usage: ruby main.rb <config_json>")
+            @@rootLog.info("Usage: ruby main.rb <config_json>")
         end
+    end
+    
+    def self.rootLog()
+        return @@rootLog
     end
 end
 

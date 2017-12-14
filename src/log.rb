@@ -9,6 +9,12 @@ module Log
     # Log directory
     @@logDir = "./log"
     
+    # Default logger severity
+    @@defaultMinLevel = Logger::Severity::DEBUG
+    
+    # Default log to file setting
+    @@defaultLogToFile = true
+    
     # Splits a logging output into two or more other outputs
     # Based on https://stackoverflow.com/a/6407200
     class IOSplitter
@@ -56,10 +62,11 @@ module Log
         end
     end
 
-    def self.createLogger(name, toFile = true, toConsole = true)
+    def self.createLogger(name, toFile = true, toConsole = @@defaultLogToFile)
         logger =  Logger.new(createLogDev(name, toFile, toConsole))
         logger.progname = name 
         logger.formatter = proc {|sev, dt, nm, msg| "[#{dt.strftime("%Y-%m-%d(%a) %H:%M:%S.%L")}][#{sev}][#{nm}] #{msg}\n"}
+        logger.level = @@defaultMinLevel;
         return logger;
         
     end
@@ -67,5 +74,21 @@ module Log
     def self.changeLogMode(logger, toFile, toConsole)
         logDev = createLogDev(logger.progname, toFile, toConsole)
         logger.reopen(logDev)
+    end
+    
+    def self.defaultMinLevel()
+        return @@defaultMinLevel
+    end
+    
+    def self.defaultMinLevel=(level)
+        @@defaultMinLevel = level
+    end
+    
+    def self.defaultLogToFile()
+        return @@defaultLogToFile
+    end
+    
+    def self.defaultLogToFile=(logToFile)
+        @@defaultLogToFile = logToFile
     end
 end
