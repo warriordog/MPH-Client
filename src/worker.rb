@@ -163,7 +163,7 @@ module Wkr
                     gRate = m.rate.to_f / 1000000000.0
                     prof = m.rate.to_f * statProfit
                     gProf = gRate * statProfit
-                    @logger.debug("Profit for #{statCoin[:coin_name]} on #{m.miner.id}:  #{statProfit} * #{m.rate}H/s (#{gRate}GH/s) = #{prof} (#{gProf}))")
+                    @logger.debug {"Profit for #{statCoin[:coin_name]} on #{m.miner.id}:  #{statProfit} * #{m.rate}H/s (#{gRate}GH/s) = #{prof} (#{gProf}))"}
                 }
             }
             
