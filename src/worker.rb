@@ -116,7 +116,7 @@ module Wkr
             
             # Map algorithm ID -> workerAlgorithm@algos[Coins.Coins[statCoin[:coin_name]]
             @algos = algorithms
-            @logger = Log.createLogger("worker." + @id)
+            @logger = Log.createLogger("worker/" + @id)
             
             @currentJob = nil
         end

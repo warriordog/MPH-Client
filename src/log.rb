@@ -41,6 +41,9 @@ module Log
     end
 
     def self.createLogPath(logDir, name)
+        # sanitize name
+        name = name.gsub(/[^a-z0-9]/i, "_")
+    
         if (!Dir.exist?(logDir))
             Dir.mkdir(logDir)
         end
