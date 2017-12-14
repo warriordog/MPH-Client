@@ -196,6 +196,8 @@ module Wkr
                     # Set up new job
                     @currentJob = WorkerJob.new(self, wkrAlgo.algorithm, coin, miner, host)
                     @currentJob.start()
+                else
+                    @logger.debug("Not changing coins")
                 end
             else
                 @logger.error("No valid coins for worker #{@name}, not switching!")
