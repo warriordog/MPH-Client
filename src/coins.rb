@@ -2,7 +2,7 @@
 # Coins and algorithms
 #----------------------
 
-require_relative('log')
+require_relative 'log'
 
 module Coins
     # Module logger

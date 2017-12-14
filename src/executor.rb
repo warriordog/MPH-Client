@@ -7,7 +7,7 @@ require 'pty'
 
 # Not required, because worker requires this
 #require_relative('worker')
-require_relative('log')
+require_relative 'log'
 
 class Executor
     def initialize()
