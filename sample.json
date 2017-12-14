@@ -1,47 +1,115 @@
 {
-  "config_version": 1,
+  "config_version": 2,
   "settings": {
     "api_key": "",
-    "account": "acomputerdog",
+    "account": "",
     "switch_interval": 60,
     "network_timeout": 60,
     "log_to_file": true,
-    "log_level": "DEBUG"
+    "log_level": "INFO"
   },
-  "workers": [
+  "algorithms": [
     {
-      "name": "NVidia GPUs",
-      "id": "worker_nvidia",
-      "profit_field": "profit",
-      "algorithms": [
+      "id": "equihash",
+      "name": "Equihash",
+      "coins": [
         {
-          "name": "Equihash",
-          "coins": ["zcash"],
-          "rate": 300,
-          "miner":{
-            "name": "CCMiner",
-            "path": "miners/ccminer",
-            "exec": "./ccminer-x64",
-            "args": "-r 0 -T $$TIMEOUT -a equihash -o stratum+tcp://$$HOST:$$PORT -u $$ACCOUNT.$$WORKER_ID -p z"
-          }
+          "id": "bitcoin-gold",
+          "name": "Bitcoin Gold"
+        },
+        {
+          "id": "zencash",
+          "name": "Zencash"
+        },
+        {
+          "id": "zcash",
+          "name": "Zcash"
+        },
+        {
+          "id": "zclassic",
+          "name": "Zclassic"
         }
       ]
     },
     {
-      "name": "CPUs",
-      "id": "worker_cpu",
+      "id": "cryptonight",
+      "name": "Cryptonight",
+      "coins": [
+        {
+          "id": "monero",
+          "name": "Monero"
+        }
+      ]
+    },
+    {
+      "id": "ethash",
+      "name": "Ethash",
+      "coins": [
+        {
+          "id": "ethereum",
+          "name": "Ethereum"
+        },
+        {
+          "id": "musicoin",
+          "name": "Musicoin"
+        },
+        {
+          "id": "ethereum-classic",
+          "name": "Ethereum Classic"
+        },
+        {
+          "id": "expanse",
+          "name": "Expanse"
+        }
+      ]
+    }
+  ],
+  "miners": [
+    {
+      "id": "xmr-stak",
+      "name": "XMR-stak",
+      "path": "miners/xmr-stak",
+      "exec": "./xmr-stak",
+      "args": "--noAMD --noNVIDIA --currency $$COIN -o $$HOST:$$PORT -u $$ACCOUNT.$$WORKER_ID -p z"
+    },
+    {
+      "id": "ccminer",
+      "name": "CCMiner",
+      "path": "miners/ccminer",
+      "exec": "./ccminer-x64",
+      "args": "-r 0 -T $$TIMEOUT -a $$ALGORITHM -o stratum+tcp://$$HOST:$$PORT -u $$ACCOUNT.$$WORKER_ID -p z"
+    }
+  ],
+  "workers": [
+    {
+      "id": "gpu_nvidia",
+      "name": "NVidia GPUs",
       "profit_field": "profit",
       "algorithms": [
         {
-          "name": "Monero",
-          "coins": ["monero"],
-          "rate": 100,
-          "miner": {
-            "name": "XMR Stak",
-            "path": "miners/xmr-stak",
-            "exec": "./xmr-stak",
-            "args": "--noAMD --noNVIDIA -o $$HOST:$$PORT -u $$ACCOUNT.$$WORKER_ID -p z"
-          }
+          "id": "equihash",
+          "miners": [
+            {
+              "id": "ccminer",
+              "rate": "300"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "worker_cpu",
+      "name": "CPUs",
+      "profit_field": "profit",
+      "algorithms": [
+        {
+          "id": "cryptonight",
+          "miners": [
+            {
+              "id": "xmr-stak",
+              "rate": "60"
+            }
+          ]
         }
       ]
     }

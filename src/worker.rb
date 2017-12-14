@@ -2,40 +2,108 @@
 # Worker groups
 #---------------
 
+require_relative('log')
 require_relative('executor')
+require_relative('coins')
 
 module Wkr
-    class Miner
-        def initialize(name, path, exec, args)
-            @name = name
-            @path = path
-            @exec = exec
-            @args = args
+
+    # Module logger
+    @@logger = Log.createLogger("Workers")
+
+    # Hash of ids -> workers
+    @@Workers = {}
+
+    # A miner supported by a specific worker
+    class WorkerMiner
+        def initialize(miner, rate)
+            @miner = miner
+            @rate = rate
         end
         
-        attr_reader :name, :path, :exec
+        attr_reader :miner, :rate
         
-        def args(worker, coin)
-            return @args
-                .gsub("$$TIMEOUT", Config.settings[:switch_interval].to_s)
-                .gsub("$$HOST", coin[:direct_mining_host].to_s)
-                .gsub("$$PORT", coin[:port].to_s)
-                .gsub("$$WORKER_ID", worker.id.to_s)
-                .gsub("$$ACCOUNT", Config.settings[:account].to_s)
-            ;
+        def self.createFromJSON(json)
+            # Look up miner
+            miner = Miners.miners[json[:id]]
+            if (miner == nil)
+                Coins.logger.error("Missing miner: #{json[:id]}")
+            end
+            
+            return WorkerMiner.new(miner, json[:rate])
         end
     end
 
-    class Algorithm
-        def initialize(name, coins, rate, miner)
-            @name = name
-            @coins = coins
-            @rate = rate
+    # An algorithm supported by a specific worker
+    class WorkerAlgorithm
+        def initialize(algorithm, wkrMiners)
+            @algorithm = algorithm
             
-            @miner = Wkr.createMiner(miner)
+            # Sort by descending rate
+            @wkrMiners = wkrMiners.sort() {|m1, m2| m2.rate <=> m1.rate}
         end
         
-        attr_reader :name, :coins, :rate, :miner
+        attr_reader :algorithm, :wkrMiners
+        
+        def self.createFromJSON(json)
+            # Load miners
+            wkrMiners = []
+            json[:miners].each {|miner| wkrMiners << WorkerMiner.createFromJSON(miner)}
+        
+            # Look up algorithm
+            alg = Coins.algorithms[json[:id]]
+            if (alg == nil)
+                Coins.logger.error("Missing algorithm: #{json[:id]}")
+            end
+        
+            return WorkerAlgorithm.new(alg, wkrMiners)
+        end
+    end
+
+    class WorkerJob
+        def initialize(worker, algorithm, coin, miner, host)
+            @worker = worker
+            @algorithm = algorithm
+            @coin = coin
+            @miner = miner
+            @host = host
+            @executor = nil
+        end
+        
+        attr_reader :worker, :algorithm, :coin, :miner, :executor, :host
+        
+        def start()
+            # Run algorithm
+            @executor = Executor.new()
+            @executor.start(self)
+        end
+        
+        def running?()
+            return @executor != nil && @executor.alive?()
+        end
+        
+        def same?(algo, coin, miner, host)
+            return running? && algo == @algorithm && coin == @coin && miner == @miner && host == @host
+        end
+        
+        def stop()
+            if (running?)
+                @executor.stop()
+            end
+        end
+    end
+    
+    class Host
+        def initialize(addr, port)
+            @addr = addr
+            @port = port
+        end
+        
+        attr_reader :addr, :port
+        
+        def ==(other)
+            return other.addr == @addr && other.port == @port
+        end
     end
 
     class Worker
@@ -44,76 +112,106 @@ module Wkr
             @id = id
             @profitField = profitField
             
-            @algos = Wkr.loadAlgorithms(algorithms)
-            @logger = Log.createLogger("worker." + @name, true, true)
+            # Map algorithm ID -> workerAlgorithm@algos[Coins.Coins[statCoin[:coin_name]]
+            @algos = algorithms
+            @logger = Log.createLogger("worker." + @id)
             
-            @executor = nil
+            @currentJob = nil
         end
         
         # Add getters
-        attr_reader :name, :id, :profitField, :algos, :logger, :executor
+        attr_reader :name, :id, :profitField, :algos, :logger, :currentJob
         
         # Find the profit for a specified coin
-        def calcProfit(coin)
-            algo = @algos.find {|alg| alg.coins.contains(coin[:coin_name])}
+        def calcProfit(statCoin)
+            # Get algorithm for coin name, then look up WorkerAlgorithm by ID
+            algo = @algos[Coins.coins[statCoin[:coin_name]].algorithm.id]
             if (algo != nil)
-                return coin[@profitField] * algo.rate;
+                if (!algo.workers.empty?)
+                    # Calculate profit by (profit_field * best rate)
+                    return statCoin[@profitField.to_sym] * algo[0].rate;
+                else
+                    @logger.error("No miners for coin #{statCoin[:coin_name]}")
+                end
             else
                 # Should not happen, but -1 profit if we don't have an algorithm for that coin
-                @logger.warn("Filter did not exclude coin '#{coin[:coin_name]}' from worker '#{@id}'")
-                return -1
+                @logger.warn("Filter did not exclude coin '#{statCoin[:coin_name]}' from worker '#{@id}'")
             end
+            
+            # If we could not calculate profit for some reason, then profit is -1
+            return -1
         end
         
         # Switch currently running algorithm based on current profit statistics
         def switchAlgo(stats)
             # only include coins that we have miners for, then sort by descending profit
-            coins = stats.select {|coin| @algos.any?{|algo| algo.coins.include?(coin[:coin_name])}}.sort {|a, b| calcProfit(b) <=> calcProfit(a)}
-            if (coins.length > 0)
+            statCoins = stats
+                .select {|statCoin| @algos.any?{|id, wkrAlgo| wkrAlgo.algorithm.supportsCoin?(statCoin[:coin_name])}}
+                .sort {|a, b| calcProfit(b) <=> calcProfit(a)}
+            ;
+            
+            # Make sure there was at least one good coin
+            
+            if (!statCoins.empty?)
                 # First should be most profitable
-                coin = coins[0]
-                coinName = coin[:coin_name]
-                algo = @algos.find {|alg| alg.coins.include?(coinName)}
+                statCoin = statCoins[0]
                 
-                # Run algorithm
-                # TODO get rid of duplicate code
-                if (@executor == nil)
+                coinName = statCoin[:coin_name]
+                
+                # Lokup matching coin
+                coin = Coins.coins[coinName]
+                # Get WorkerAlgorithm for this coin
+                wkrAlgo = @algos[coin.algorithm.id]
+                # Get best miner for this coin
+                miner = wkrAlgo.wkrMiners[0].miner
+                
+                # Create host for this task
+                host = Host.new(statCoin[:direct_mining_host], statCoin[:port])
+                
+                # Start mining only if the task parameters have changed
+                if (@currentJob == nil || !@currentJob.same?(wkrAlgo.algorithm, coin, miner, host))
+                    # start job
                     @logger.info("Switching to #{coinName}")
-                    @executor = Executor.new()
-                    @executor.start(algo, self, coin)
-                elsif (@executor.algorithm != algo)
-                    @logger.info("Switching to #{coinName}")
-                    @executor.stop()
-                    @executor = Executor.new()
-                    @executor.start(algo, self, coin)
+                    
+                    # Stop current job, if there is one
+                    if (@currentJob != nil)
+                        @currentJob.stop()
+                    end
+                    
+                    # Set up new job
+                    @currentJob = WorkerJob.new(self, wkrAlgo.algorithm, coin, miner, host)
+                    @currentJob.start()
                 end
             else
-                puts "Error: no valid coins for worker #{@name}!"
+                @logger.error("No valid coins for worker #{@name}, not switching!")
             end
         end
         
         # Stop mining (if mining)
         def stopMining()
-            if (@executor != nil)
-                @executor.stop()
-                @executor = nil
+            if (@currentJob != nil)
+                @currentJob.stop()
+                @currentJob = nil
             end
+        end
+        
+        # Load from json
+        def self.createFromJSON(json)
+            # Create WorkerAlgorithms
+            algs = {}
+            json[:algorithms].each {|alg| 
+                wkrAlg = WorkerAlgorithm.createFromJSON(alg)
+                algs[wkrAlg.algorithm.id] = wkrAlg
+            }
+            
+            # Create worker
+            return Worker.new(json[:name], json[:id], json[:profit_field], algs)
         end
     end
 
-    def self.loadWorkers(arr)
+    def self.loadWorkers()
         workers = []
-        arr.each {|wkr| workers << Worker.new(wkr[:name], wkr[:id], wkr[:profit_field], wkr[:algorithms])}
+        Config.workers.each {|wkr| workers << Worker.createFromJSON(wkr)}
         return workers
-    end
-
-    def self.loadAlgorithms(arr)
-        algs = []
-        arr.each {|alg| algs << Algorithm.new(alg[:name], alg[:coins], alg[:rate], alg[:miner])}
-        return algs
-    end
-
-    def self.createMiner(hash)
-        return Miner.new(hash[:name], hash[:path], hash[:exec], hash[:args])
     end
 end

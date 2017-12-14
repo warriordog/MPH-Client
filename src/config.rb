@@ -9,6 +9,12 @@ module Config
     # Settings hash
     @@settings = nil
     
+    # Algorithms hash
+    @@algorithms = nil
+    
+    # Miners hash
+    @@miners = nil
+    
     # Workers hash
     @@workers = nil
 
@@ -21,10 +27,12 @@ module Config
             json = JSON.parse(file, :symbolize_names => true)
             if (json != nil)
                 # check version
-                if (json[:config_version] == 1)
+                if (json[:config_version] == 2)
                     # save config
                     @@cfg = json
                     @@settings = json[:settings]
+                    @@algorithms = json[:algorithms]
+                    @@miners = json[:miners]
                     @@workers = json[:workers]
                 else 
                     # TODO upgrade config
@@ -44,6 +52,14 @@ module Config
     
     def self.settings()
         return @@settings
+    end
+    
+    def self.algorithms()
+        return @@algorithms
+    end
+    
+    def self.miners()
+        return @@miners
     end
     
     def self.workers()

@@ -13,6 +13,8 @@ require_relative 'config'
 require_relative 'worker'
 require_relative 'mph'
 require_relative 'log'
+require_relative 'coins'
+require_relative 'miners'
 
 module MPHClient
     # Global logger
@@ -70,8 +72,14 @@ module MPHClient
                         RootLog.level = logLevel
                     end
                 
+                    # Load coins and algorithms
+                    Coins.loadAlgorithms()
+                
+                    # Load miners
+                    Miners.loadMiners()
+                
                     # Load workers
-                    workers = Wkr.loadWorkers(Config.workers)
+                    workers = Wkr.loadWorkers()
                     
                     # Start mining
                     runMainLoop(workers)

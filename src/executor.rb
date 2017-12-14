@@ -8,31 +8,31 @@ require 'pty'
 
 class Executor
     def initialize()
-        @algorithm = nil        
+        @job = nil      
         @running = false # Not synchronized, so be careful when accessing
         @pid = nil
         @logger = nil
     end
     
-    attr_reader :algorithm, :coin, :running
+    attr_reader :job, :running, :pid
     
-    def start(algorithm, worker, coin)
+    def start(job)
         #@running = true
         
         # don't start if already running
-        if (!alive())
-            @algorithm = algorithm
-            @logger = worker.logger
+        if (!alive?())
+            @job = job
+            @logger = job.worker.logger
             
-            @logger.info("Starting #{@algorithm.miner.name} on #{coin[:coin_name]}.")
+            @logger.info("Starting #{@job.miner.name} on #{@job.coin.name}.")
        
             # Create subprocess (INSECURE - uses shell, so don't pass any external data in.
-            cmd = "#{@algorithm.miner.exec} #{@algorithm.miner.args(worker, coin)}"
-            #cmd = "ping www.google.com"
+            cmd = "#{@job.miner.exec} #{@job.miner.args(job)}"
+            @logger.debug("Command: #{cmd}")
 
             # Adpated from https://ruby-doc.org/stdlib-2.2.3/libdoc/pty/rdoc/PTY.html
             master, slave = PTY.open
-            @pid = spawn(cmd, :chdir => @algorithm.miner.path, :in=>slave, :out=>slave, :err=>slave)
+            @pid = spawn(cmd, :chdir => @job.miner.path, :in=>slave, :out=>slave, :err=>slave)
             slave.close    # Don't need the slave
 
             @running = true
@@ -88,19 +88,20 @@ class Executor
     end
     
     def stop()
-        if (alive())
-            @logger.info("Termining #{@algorithm.miner.name}...")
+        if (alive?())
+            @logger.info("Termining #{@job.miner.name}...")
             # Kill process
             Process.kill("TERM", @pid)
             Process.wait(@pid)
-            @logger.info("#{@algorithm.miner.name} stopped.")
+            @logger.info("#{@job.miner.name} stopped.")
         end
+        @job = nil
         @logger = nil
         @pid = nil
         @running = false
     end
     
-    def alive()
+    def alive?()
         # Signal 0 checks if process is alive
         #return Process.kill(@pid, 0)
         return @running
