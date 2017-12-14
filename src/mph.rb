@@ -2,9 +2,11 @@
 # API endpoints for MiningPoolHub
 #---------------------------------
 
-require 'pp'
+require_relative 'log'
 
 module MPH
+    # Module logger
+    @@logger = Log.createLogger("MPH_API")
 
     # Gets the mining and profit statistics for a (or all) coin(s)
     def self.getMiningAndProfitsStatistics(coin = nil)
@@ -27,17 +29,13 @@ module MPH
                 return resp[:return]
             else
                 # Return nil if server had error
-                puts "Server error in getminingandprofitsstatistics: '#{resp[:return]}'"
+                @@logger.warn("Server error in getminingandprofitsstatistics: '#{resp[:return]}'")
                 return nil
             end
         # TODO proper error checking
         # Return nil in case of errors
-        rescue Object => o
-            puts "Error in getminingandprofitsstatistics: "
-            pp o
-            return nil
-        rescue
-            puts "Unknown error in getminingandprofitsstatistics."
+        rescue o
+            @@logger.error("Error in getminingandprofitsstatistics: #{o}")
             return nil
         end
     end
