@@ -27,7 +27,7 @@ for fl in $dir/$pattern; do
         echo "OK"
     else
         echo "failed!"
-        echo $output
+        echo "$output"
         exit 1
     fi
 done
