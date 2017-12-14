@@ -103,8 +103,16 @@ class Executor
     def stop()
         if (alive?())
             @logger.info("Termining #{@job.miner.name}...")
-            # Kill process
-            Process.kill("TERM", @pid)
+            
+            # Process.kill() is currently broken on windows.
+            # See https://blog.simplificator.com/2016/01/18/how-to-kill-processes-on-windows-using-ruby/
+            if (Gem.win_platform?)
+                system("taskkill /pid #{@pid}") 
+            else
+                # Kill process
+                Process.kill("TERM", @pid)
+            end
+            
             Process.wait(@pid)
             @logger.info("#{@job.miner.name} stopped.")
         end
