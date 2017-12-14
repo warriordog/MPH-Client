@@ -132,7 +132,7 @@ module Wkr
                 wkrMiners = algo.wkrMiners
                 if (!wkrMiners.empty?)
                     # Calculate profit by (profit_field * best rate)
-                    return statCoin[@profitField.to_sym] * wkrMiners[0].rate;
+                    return statCoin[@profitField.to_sym].to_f * wkrMiners[0].rate.to_f;
                 else
                     @logger.error("No miners for coin #{statCoin[:coin_name]}")
                 end

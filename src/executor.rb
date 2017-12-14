@@ -33,6 +33,9 @@ class Executor
             # Linux and windows miners behave differently and need different process code.
             if (Gem.win_platform?)
                 @logger.debug("Using pipes for IO")
+                
+                require 'open3'
+                
                 # This method doesn't work for programs that use TTYs
                 # Start the process
                 stdin, stdout, thr = Open3.popen2e(cmd, :chdir => @job.miner.path)
