@@ -26,7 +26,7 @@ for fl in $dir/$pattern; do
     if [ "$output" == "Syntax OK" ]; then
         echo "OK"
     else
-        echo "failed!"
+        echo "Failed!"
         echo "$output"
         exit 1
     fi
