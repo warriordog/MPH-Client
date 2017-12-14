@@ -107,7 +107,12 @@ class Executor
             # Process.kill() is currently broken on windows.
             # See https://blog.simplificator.com/2016/01/18/how-to-kill-processes-on-windows-using-ruby/
             if (Gem.win_platform?)
-                system("taskkill /pid #{@pid}") 
+                if (!system("taskkill /pid #{@pid}"))
+                    # Some processes must be forcefully killed
+                    if (!system("taskkill /f /pid #{@pid}"))
+                        @logger.error("Unable to stop miner!")
+                    end
+                end
             else
                 # Kill process
                 Process.kill("TERM", @pid)
