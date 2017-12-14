@@ -118,7 +118,7 @@ class Executor
                 Process.kill("TERM", @pid)
             end
             
-            Process.wait(@pid)
+            #Process.wait(@pid)
             @logger.info("#{@job.miner.name} stopped.")
         end
         @job = nil
