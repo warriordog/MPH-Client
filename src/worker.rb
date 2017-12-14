@@ -129,9 +129,10 @@ module Wkr
             # Get algorithm for coin name, then look up WorkerAlgorithm by ID
             algo = @algos[Coins.coins[statCoin[:coin_name]].algorithm.id]
             if (algo != nil)
-                if (!algo.workers.empty?)
+                wkrMiners = algo.wkrMiners
+                if (!wkrMiners.empty?)
                     # Calculate profit by (profit_field * best rate)
-                    return statCoin[@profitField.to_sym] * algo[0].rate;
+                    return statCoin[@profitField.to_sym] * wkrMiners[0].rate;
                 else
                     @logger.error("No miners for coin #{statCoin[:coin_name]}")
                 end
