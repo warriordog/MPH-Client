@@ -4,7 +4,12 @@
 
 require 'json'
 
+require_relative 'log'
+
 module Config
+    # Module logger
+    @@logger = Log.createLogger("Config")
+
     # Config file instance
     @@cfg = nil
     
@@ -37,13 +42,13 @@ module Config
                     @@workers = json[:workers]
                 else 
                     # TODO upgrade config
-                    puts "Outdated config file, please update to continue."
+                    @@logger.fatal("Outdated config file, please update to continue.")
                 end
             else
-                puts "Malformed config file, check your JSON."
+                @@logger.fatal("Malformed config file, check your JSON.")
             end
         else
-            puts "Unable to access config file '#{cfgfile}.'"
+            @@logger.fatal("Unable to access config file '#{cfgfile}.'")
         end
     end
     

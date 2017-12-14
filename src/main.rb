@@ -84,7 +84,7 @@ module MPHClient
                     # Start mining
                     runMainLoop(workers)
                 else
-                    RootLog.info("Error: failed to load config file.  Please check for errors!")
+                    RootLog.fatal("Error: failed to load config file.  Please check for errors!")
                 end
             else
                 RootLog.fatal("Error: config file '#{configFile}' does not exist.")
