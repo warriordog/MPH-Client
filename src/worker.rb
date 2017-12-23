@@ -56,9 +56,10 @@ module Wkr
             alg = Coins.algorithms[json[:id]]
             if (alg == nil)
                 Coins.logger.error("Missing algorithm: #{json[:id]}")
+                return nil
+            else
+                return WorkerAlgorithm.new(alg, wkrMiners)
             end
-        
-            return WorkerAlgorithm.new(alg, wkrMiners)
         end
     end
 
@@ -218,7 +219,9 @@ module Wkr
             algs = {}
             json[:algorithms].each {|alg| 
                 wkrAlg = WorkerAlgorithm.createFromJSON(alg)
-                algs[wkrAlg.algorithm.id] = wkrAlg
+                if (wkrAlg != nil)
+                    algs[wkrAlg.algorithm.id] = wkrAlg
+                end
             }
             
             # Create worker

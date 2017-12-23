@@ -82,6 +82,10 @@ module Coins
         return @@algorithms
     end
     
+    def self.logger()
+        return @@logger
+    end
+    
     def self.coins()
         return @@coins
     end
