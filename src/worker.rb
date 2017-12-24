@@ -55,7 +55,7 @@ module Wkr
             # Look up algorithm
             alg = Coins.algorithms[json[:id]]
             if (alg == nil)
-                Coins.logger.error("Missing algorithm: #{json[:id]}")
+                Coins.logger.warn("Missing algorithm: #{json[:id]}")
                 return nil
             else
                 return WorkerAlgorithm.new(alg, wkrMiners)

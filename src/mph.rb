@@ -34,8 +34,8 @@ module MPH
             end
         # TODO proper error checking
         # Return nil in case of errors
-        rescue o
-            @@logger.error("Error in getminingandprofitsstatistics: #{o}")
+        rescue Exception => e
+            @@logger.error("Error in getminingandprofitsstatistics: #{e}")
             return nil
         end
     end
