@@ -29,7 +29,7 @@ module Wkr
             # Look up miner
             miner = Miners.miners[json[:id]]
             if (miner == nil)
-                Coins.logger.error("Missing miner: #{json[:id]}")
+                Coins.logger.warn("Missing miner: #{json[:id]}")
             end
             
             return WorkerMiner.new(miner, json[:rate])
