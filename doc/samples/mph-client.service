@@ -1,0 +1,27 @@
+#
+# Sample systemd service file.
+# This assumes that you have a "start.sh" that calls main.rb from the correct directory and passes in the correct config JSON.
+# To use, set the "User", "WorkingDirectory", and "ExecStart" values as specified below and then copy (don't symlink) as root to /etc/systemd/system/.
+#
+
+[Unit]
+Description=MPH-Client
+After=network.target
+
+[Service]
+Type=simple
+
+# Set this to the user you want to mine as (it should not have sudo / admin access)
+User=user
+
+# Path to the mining directory
+WorkingDirectory=/home/user/Desktop/mining
+
+# Path to the start script
+ExecStart=/home/user/Desktop/mining/start.sh
+Restart=on-abort
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
+
