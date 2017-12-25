@@ -39,4 +39,55 @@ module MPH
             return nil
         end
     end
+	
+	# converts an MPH rate into H/s
+	def self.parseRate(rateString)
+		if (rateString.empty?)
+			return nil
+		else
+			unit = rateString[-1]
+			value = rateString[0...-1]
+			
+			case unit
+			when 'H'
+				return value.to_i
+			when 'K'
+				return value.to_i * 1000
+			when 'M'
+				return value.to_i * 1000 * 1000
+			when 'G'
+				return value.to_i * 1000 * 1000 * 1000
+			when 'T'
+				return value.to_i * 1000 * 1000 * 1000 * 1000
+			else
+				return rateString.to_i
+			end
+		end
+	end
+	
+	# Same as parseRate, but converts to float Mh/s
+	def self.parseRateMh(rateString)
+		if (rateString.empty?)
+			return nil
+		else
+			unit = rateString[-1]
+			value = rateString[0...-1]
+			
+			case unit
+			when 'H'
+				return value.to_f / 1000000.0
+			when 'K'
+				return value.to_f / 1000.0
+			when 'M'
+				return value.to_f
+			when 'G'
+				return value.to_f * 1000.0
+			when 'T'
+				return value.to_f * 1000.0 * 1000.0
+			else
+				# assume H/s
+				return rateString.to_f  / 1000000.0
+			end
+		end
+	end
 end

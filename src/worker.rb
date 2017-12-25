@@ -42,7 +42,7 @@ module Wkr
             @algorithm = algorithm
             
             # Sort by descending rate
-            @wkrMiners = wkrMiners.sort() {|m1, m2| m2.rate <=> m1.rate}
+            @wkrMiners = wkrMiners.sort() {|m1, m2| m2.rate.to_i <=> m1.rate.to_i}
         end
         
         attr_reader :algorithm, :wkrMiners
@@ -124,7 +124,7 @@ module Wkr
         
         # Add getters
         attr_reader :name, :id, :profitField, :algos, :logger, :currentJob
-        
+		
         # Find the profit for a specified coin
         def calcProfit(statCoin)
             # Get algorithm for coin name, then look up WorkerAlgorithm by ID
@@ -132,10 +132,30 @@ module Wkr
             if (algo != nil)
                 wkrMiners = algo.wkrMiners
                 if (!wkrMiners.empty?)
+					# wkrMiners are sorted
+					miner = wkrMiners[0]
+				
+					# BTC / Gh / day
                     statProfit = statCoin[@profitField.to_sym].to_f
-                    rate = wkrMiners[0].rate.to_f
-                    # Calculate profit by (profit_field * best rate)
-                    return statProfit * rate;
+					
+					# Rate in Mh/s
+					totalRateM = MPH.parseRateMh(statCoin[:pool_hash])
+					
+					# Our rate in H/s
+                    ourRateH = miner.rate.to_f
+					# Our rate in Mh/s
+					ourRateM = ourRateH / 1000000.0 
+					
+					# Percent of pool hashrate that will be ours
+					ratePercent = totalRateM / ourRateM
+					
+                    # Calculate profit (does not adjust for time, but that doesn't matter here)
+                    calcProfit = statProfit * ratePercent
+					
+					# Debug print profit
+					@logger.debug {"Calculated profit for #{statCoin[:coin_name]} on #{miner.miner.id}: #{calcProfit}"}
+					
+					return calcProfit;
                 else
                     @logger.error("No miners for coin #{statCoin[:coin_name]}")
                 end
@@ -153,20 +173,22 @@ module Wkr
             # only include coins that we have miners for, then sort by descending profit
             statCoins = stats
                 .select {|statCoin| @algos.any?{|id, wkrAlgo| wkrAlgo.algorithm.supportsCoin?(statCoin[:coin_name])}}
-                .sort {|a, b| calcProfit(b) <=> calcProfit(a)}
+				.each {|statCoin| statCoin[:CalculatedProfit] = calcProfit(statCoin)}
+                .sort {|a, b| b[:CalculatedProfit] <=> a[:CalculatedProfit]}
             ;
             
             # Debug print profit
-            statCoins.each {|statCoin|
-                statProfit = statCoin[@profitField.to_sym]
-                wkrMiners = @algos[Coins.coins[statCoin[:coin_name]].algorithm.id].wkrMiners
-                wkrMiners.each {|m| 
-                    gRate = m.rate.to_f / 1000000000.0
-                    prof = m.rate.to_f * statProfit
-                    gProf = gRate * statProfit
-                    @logger.debug {"Profit for #{statCoin[:coin_name]} on #{m.miner.id}:  #{statProfit} * #{m.rate}H/s (#{gRate}GH/s) = #{prof} (#{gProf}))"}
-                }
-            }
+            #statCoins.each {|statCoin|
+            #    statProfit = statCoin[@profitField.to_sym]
+            #    wkrMiners = @algos[Coins.coins[statCoin[:coin_name]].algorithm.id].wkrMiners
+            #    wkrMiners.each {|m| 
+                    #gRate = m.rate.to_f / 1000000000.0
+                    #prof = m.rate.to_f * statProfit
+                    #gProf = gRate * statProfit
+                    #@logger.debug {"Profit for #{statCoin[:coin_name]} on #{m.miner.id}:  #{statProfit} * #{m.rate}H/s (#{gRate}GH/s) = #{prof} (#{gProf}))"}
+			#		
+			#	}
+            #}
             
             # Make sure there was at least one good coin
             if (!statCoins.empty?)
