@@ -1,6 +1,6 @@
 #!ruby -w
 
-# Simple tool to benchmark CPUMiner.  Probably doesn't work under windows.
+# Simple tool to benchmark CPUMiner.  Only for *nix platforms.
 
 # These algorithms are not benchmarked:
 #   c11/flax: can't figure out actual algo name
