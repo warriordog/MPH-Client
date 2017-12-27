@@ -4,17 +4,12 @@
 # MPH-Client main source file
 #-----------------------------
 
-# Include required libraries
-require 'json'
-require 'net/http'
-
-# Include other project files
-require_relative 'config'
-require_relative 'worker'
-require_relative 'mph'
-require_relative 'log'
-require_relative 'coins'
-require_relative 'miners'
+require 'config'
+require 'util/log'
+require 'miner/worker'
+require 'miner/coins'
+require 'miner/miners'
+require 'api/mph'
 
 module MPHClient
     # Global logger (default creation is temporary until config is loaded)

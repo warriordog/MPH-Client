@@ -2,8 +2,8 @@
 # Coins miners
 #--------------
 
-require_relative 'log'
-require_relative 'config'
+require 'util/log'
+require 'config'
 
 module Miners
     # Module logger

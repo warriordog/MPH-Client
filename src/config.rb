@@ -4,7 +4,7 @@
 
 require 'json'
 
-require_relative 'log'
+require 'util/log'
 
 module Config
     # Module logger

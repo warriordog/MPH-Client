@@ -2,7 +2,10 @@
 # API endpoints for MiningPoolHub
 #---------------------------------
 
-require_relative 'log'
+require 'json'
+require 'net/http'
+
+require 'util/log'
 
 module MPH
     # Module logger

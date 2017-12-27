@@ -2,11 +2,11 @@
 # Worker groups
 #---------------
 
-require_relative 'log'
-require_relative 'executor'
-require_relative 'coins'
-require_relative 'config'
-require_relative 'miners'
+require 'config'
+require 'util/log'
+require 'miner/executor'
+require 'miner/coins'
+require 'miner/miners'
 
 module Wkr
 
