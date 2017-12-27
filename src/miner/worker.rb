@@ -153,7 +153,7 @@ module Wkr
                     calcProfit = statProfit * ratePercent
 					
 					# Debug print profit
-					@logger.debug {"Calculated profit for #{statCoin[:coin_name]} on #{miner.miner.id}: #{calcProfit}"}
+					#@logger.debug {"Calculated profit for #{statCoin[:coin_name]} on #{miner.miner.id}: #{calcProfit}"}
 					
 					return calcProfit;
                 else
