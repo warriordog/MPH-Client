@@ -16,7 +16,10 @@ if [ $# -gt 1 ]; then
 fi
 
 # Find files
-for fl in $dir/$pattern; do
+files=( $(find "$dir" -type f -iname "$pattern") )
+
+# Check files
+for fl in "${files[@]}"; do
     echo -n "Checking $fl: "
     
     # Run ruby check
