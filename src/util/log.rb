@@ -65,7 +65,7 @@ module Log
         end
     end
 
-    def self.createLogger(name, toFile = @@defaultLogToFile, toConsole = true)
+    def self.createLogger(name, toFile: @@defaultLogToFile, toConsole: true)
         logger =  Logger.new(createLogDev(name, toFile, toConsole))
         logger.progname = name 
         logger.formatter = proc {|sev, dt, nm, msg| "[#{dt.strftime("%Y-%m-%d(%a) %H:%M:%S.%L")}][#{sev}][#{nm}] #{msg}\n"}

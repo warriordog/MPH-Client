@@ -33,7 +33,7 @@ module Config
             json = JSON.parse(file, :symbolize_names => true)
             if (json != nil)
                 # check version
-                if (json[:config_version] == 3)
+                if (json[:config_version] == 4)
                     # save config
                     @@cfg = json
                     @@settings = json[:settings]

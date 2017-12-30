@@ -13,7 +13,7 @@ require 'api/mph'
 
 module MPHClient
     # Global logger (default creation is temporary until config is loaded)
-    @@rootLog = Log.createLogger('?', false, true)
+    @@rootLog = Log.createLogger('?', toFile: false, toConsole: true)
 
     def self.runMainLoop(workers)
         running = true

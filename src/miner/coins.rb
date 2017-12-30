@@ -6,7 +6,7 @@ require 'util/log'
 
 module Coins
     # Module logger
-    @@logger = Log.createLogger("Coins", true, true)
+    @@logger = Log.createLogger("Coins", toFile: true, toConsole: true)
     
     # Hash of ids -> algorithms
     @@algorithms = {}
