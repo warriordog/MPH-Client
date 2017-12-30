@@ -14,7 +14,7 @@ start_pattern = "<select name=\"coins_to_search\" id=\"coins_to_search\" style=\
 # Pattern to stop collecting names
 stop_pattern = "</select>"
 # Pattern to match ID
-match_pattern = /\<option value\=\"(\d+)\">(.*)\s\((.*)\)<\/option>/
+match_pattern = /<option value\=\"(\d+)\">(.*)\s\((.*)\)<\/option>/
 
 
 # list of {symbol, name, id}

@@ -3,9 +3,21 @@
 # Adds up a user's total balance of all coins
 # 
 
-require 'optparse'
 require 'json'
 require 'net/http'
+
+#
+# CoinGecko ID generation settings
+#
+
+# URL to download from
+CG_base_url = "https://www.coingecko.com/en"
+# Pattern to look for to start collecting IDs
+CG_start_pattern = "<select name=\"coins_to_search\" id=\"coins_to_search\" style=\"width:100%\" class=\"select2-search-coins\">"
+# Pattern to stop collecting names
+CG_stop_pattern = "</select>"
+# Pattern to match ID
+CG_match_pattern = /\<option value\=\"(\d+)\">(.*)\s\((.*)\)<\/option>/
 
 class Coin
     def initialize(name, confirmed, unconfirmed, aeConfirmed, aeUnconfirmed, exchange)
@@ -31,7 +43,7 @@ class Coin
     end
     
     def updateExchangeRate(cgCoins, fiat)
-        cgCoin = cgCoins[@name.downcase()]
+        cgCoin = cgCoins.getCoin(@name.downcase())
         if (cgCoin != nil)
             rates = JSON.parse(Net::HTTP.get(URI("https://www.coingecko.com/price_charts/#{cgCoin.id}/#{fiat}/24_hours.json")))['stats']
             if (rates != nil)
@@ -100,29 +112,80 @@ class CGCoin
     
     def self.createFromJSON(json)
         name = json['name'].downcase().gsub(' ', '-')
-        return CGCoin.new(json['symbol'], name, json['id'])
+        symbol = json['symbol'].downcase()
+        return self.new(symbol, name, json['id'])
+    end
+end
+
+class CGCoins
+    def initialize(coins, remapCoins = {})
+        @coins = coins
+        @remapCoins = remapCoins
     end
     
-    def self.createAllFromJSON(json)
+    attr_reader :coins
+    
+    def getCoin(name)
+        if (@remapCoins[name] != nil)
+            name = @remapCoins[name]
+        end
+        
+        return @coins[name]
+    end
+    
+    def getSymbolSafe(name)
+        coin = self.getCoin(name)
+        if (coin != nil)
+            return coin.symbol
+        else
+            return name
+        end
+    end
+    
+    def self.createFromJSON(json, remapCoins)
         coins = {}
-        json.each{|coinJson|
-            coin = self.createFromJSON(coinJson)
-            coins[coin.name.downcase()] = coin
+        json.each {|coinJson|
+            coin = CGCoin.createFromJSON(coinJson)
+            coins[coin.name] = coin
         }
-        return coins
+        return self.new(coins, remapCoins)
     end
     
-    def self.createAllFromFile(path)
-        return self.createAllFromJSON(JSON.parse(File.read(path)))
+    def self.createFromFile(path, remapCoins)
+        return self.createFromJSON(JSON.parse(File.read(path)), remapCoins)
+    end
+    
+    def self.createFromCG(remapCoins)
+        # Download page
+        page = Net::HTTP.get(URI(CG_base_url))
+
+        # Extract relevant section
+        list = page[/#{Regexp.escape(CG_start_pattern)}(.*?)#{Regexp.escape(CG_stop_pattern)}/m]
+
+        # map name -> coin
+        coins = {}
+
+        # Find matches
+        list.scan(CG_match_pattern) {|id, name, symbol|
+            
+            cName = name.to_s.downcase.gsub(' ', '-')
+            cSymbol = symbol.to_s.downcase
+            cId = id.to_i
+            
+            if (!cSymbol.empty? && !cName.empty?)
+                coin = CGCoin.new(cSymbol, cName, cId)
+                #puts "{symbol=#{coin.symbol}, name=#{coin.name}, id=#{coin.id}}"
+                coins[coin.name] = coin
+            end
+        }
+        
+        return self.new(coins, remapCoins)
     end
 end
 
 # Read config
-if (ARGV.length >= 2)
+if (ARGV.length >= 1)
     apiKey = ARGV[0]
-
-    # Read CoinGecko exchange map
-    cgCoins = CGCoin.createAllFromFile(ARGV[1])
 
     # Optional settings
     options = {}
@@ -134,9 +197,11 @@ if (ARGV.length >= 2)
     options[:coin_precision] = 10
     options[:fiat_precision] = 2
     options[:tidy] = false
+    options[:cg_id_list] = nil
+    options[:remap_coins] = {}
 
     # Read options if avaialable
-    for i in (2...ARGV.length)
+    for i in (1...ARGV.length)
         arg = ARGV[i]
         
         if (arg == "-fuzzy")
@@ -150,11 +215,20 @@ if (ARGV.length >= 2)
         elsif (arg.start_with?("-ignore"))
             options[:ignored_coins] << arg.sub("-ignore", "")
         elsif (arg.start_with?("-fiat"))
-            options[:fiat] << arg.sub("-fiat", "")
+            options[:fiat] = arg.sub("-fiat", "")
         elsif (arg.start_with?("-coin_precision"))
-            options[:coin_precision] << arg.sub("-coin_precision", "")
+            options[:coin_precision] = arg.sub("-coin_precision", "")
         elsif (arg.start_with?("-fiat_precision"))
-            options[:fiat_precision] << arg.sub("-fiat_precision", "")
+            options[:fiat_precision] = arg.sub("-fiat_precision", "")
+        elsif (arg.start_with?("-cg_id_list"))
+            options[:cg_id_list] = arg.sub("-cg_id_list", "")
+        elsif (arg.start_with?("-remap"))
+            coins = arg.sub("-remap", "").split("=")
+            if (coins.length == 2)
+                options[:remap_coins][coins[0]] = coins[1]
+            else
+                puts "Wrong number of arguments for -remap"
+            end
         else
             puts "Unknown option: #{arg}"
         end
@@ -163,6 +237,13 @@ if (ARGV.length >= 2)
     # Get data from MPH
     balance = Balance.createFromMPH(apiKey)
     if (balance != nil)
+        
+        # Get CoinGecko ID mapping
+        if (options[:cg_id_list] != nil)
+            cgCoins = CGCoins.createFromFile(options[:cg_id_list], options[:remap_coins])
+        else
+            cgCoins = CGCoins.createFromCG(options[:remap_coins])
+        end
         
         # Get exchange rates from CoinGecko
         balance.coins.values.each {|coin|
@@ -178,15 +259,15 @@ if (ARGV.length >= 2)
                 # Check if coin is ignored
                 if (coin.exchangeRate > 0)
                     if (!options[:tidy])
-                        puts "#{coin.name}: #{coin.total().round(options[:coin_precision])} #{cgCoins[coin.name].symbol} == #{coin.totalValue().round(options[:fiat_precision])} #{options[:fiat]}"
+                        puts "#{coin.name}: #{coin.total().round(options[:coin_precision])} #{cgCoins.getSymbolSafe(coin.name)} == #{coin.totalValue().round(options[:fiat_precision])} #{options[:fiat]}"
                     else
-                        printf("%0.#{options[:coin_precision]}f %s == %0.#{options[:fiat_precision]}f %s\n", coin.total(), cgCoins[coin.name].symbol, coin.totalValue(), options[:fiat])
+                        printf("%0.#{options[:coin_precision]}f %s == %0.#{options[:fiat_precision]}f %s\n", coin.total(), cgCoins.getSymbolSafe(coin.name), coin.totalValue(), options[:fiat])
                     end
                 else
                     if (!options[:tidy])
-                        puts "#{coin.name}: #{coin.total().round(options[:coin_precision])} #{cgCoins[coin.name].symbol} ignored."
+                        puts "#{coin.name}: #{coin.total().round(options[:coin_precision])} #{cgCoins.getSymbolSafe(coin.name)} ignored."
                     else
-                        printf("%0.#{options[:coin_precision]}f %s ignored.\n", coin.total(), cgCoins[coin.name].symbol)
+                        printf("%0.#{options[:coin_precision]}f %s ignored.\n", coin.total(), cgCoins.getSymbolSafe(coin.name))
                     end
                 end
             }
@@ -207,7 +288,7 @@ if (ARGV.length >= 2)
         puts "Error getting balance information from MPH, check your API key and internet connection."
     end
 else
-    puts "Usage: ruby total_balance.rb <API_key> <CoinGecko_id_list> [options]"
+    puts "Usage: ruby total_balance.rb <API_key> [options]"
     puts "Options:"
     puts "  -ignore<COIN>            - Don't count a specified coin"
     puts "  -fiat<CURRENCY>          - Set fiat currency or coin (default USD)"
@@ -217,4 +298,6 @@ else
     puts "  -coin_precision<DIGITS>  - Number of digits to display for coin values (default 10)"
     puts "  -fiat_precision<DIGITS>  - Number of digits to display for fiat values (default 2)"
     puts "  -tidy                    - Compact output to stack nicely in a terminal"
+    puts "  -cg_id_list<PATH>        - Override CoinGecko coin -> ID map"
+    puts "  -remap<COIN>=<COIN>       - Remap one coin to another (useful for myriadcoin)"
 end
