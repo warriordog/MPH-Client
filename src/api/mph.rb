@@ -14,11 +14,8 @@ module MPH
     # Gets the mining and profit statistics for a (or all) coin(s)
     def self.getMiningAndProfitsStatistics(coin = nil)
         begin
-            # URL for coin (or all coins)
-            url = "https://#{coin != nil ? coin + "." : ""}miningpoolhub.com/index.php?page=api&action=getminingandprofitsstatistics"
-            
-            # Convert to URI
-            uri = URI.parse(url)
+            # Generate request
+            uri = generateURI(coin: coin, args: {"action" => "getminingandprofitsstatistics"})
             
             # send request
             resp = Net::HTTP.get(uri)
@@ -44,12 +41,30 @@ module MPH
             @@logger.error("Invalid URI generated for MPH API, was a bad coin entered?  Error was #{e}")
         rescue JSON::JSONError => e
             @@logger.error("Invalid JSON returned from MPH: #{e}")
-        rescue Exception => e
-            @@logger.error("Error in getminingandprofitsstatistics: #{e}")
+        rescue => e
+            @@logger.error("Error in getminingandprofitsstatistics:\n#{e}\n\t#{e.backtrace.join("\n\t")}")
         end
         
         # Return nil in case of errors
         return nil
+    end
+
+    # Generates an MPH API URI
+    def self.generateURI(coin: nil, page: "api", args: {})
+        # Generate base URL
+        if (coin != nil)
+            base = "https://#{URI.escape(coin)}.miningpoolhub.com/index.php?page=#{URI.escape(page)}"
+        else
+            base = "https://miningpoolhub.com/index.php?page=#{URI.escape(page)}"
+        end
+        
+        # Add API arguments
+        url = args.inject(base) {|u, arg|
+            u + "&" + URI.escape(arg[0]) + "=" + URI.escape(arg[1])
+        }
+        
+        # Convert to URI
+        return URI.parse(url)
     end
 	
 	# converts an MPH rate into H/s
