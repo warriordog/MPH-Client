@@ -1,12 +1,13 @@
 {
-  "config_version": 3,
+  "config_version": 4,
   "settings": {
     "api_key": "",
     "account": "",
     "switch_interval": 60,
     "network_timeout": 60,
     "log_to_file": true,
-    "log_level": "INFO"
+    "log_level": "INFO",
+    "show_miner_output": false
   },
   "algorithms": [
     {

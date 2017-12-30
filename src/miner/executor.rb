@@ -11,7 +11,9 @@ class Executor
         @job = nil      
         @running = false # Not synchronized, so be careful when accessing
         @pid = nil
-        @logger = nil
+        
+        @workerLogger = nil
+        @minerLogger = nil
     end
     
     attr_reader :job, :running, :pid
@@ -21,18 +23,21 @@ class Executor
         
         # don't start if already running
         if (!alive?())
+            @workerLogger = job.worker.logger        
             @job = job
-            @logger = job.worker.logger
+       
+            @workerLogger.info("Starting #{@job.miner.name} on #{@job.coin.name}.")
             
-            @logger.info("Starting #{@job.miner.name} on #{@job.coin.name}.")
+            # TODO forward to Worker logger
+            @minerLogger = Log.createLogger("#{@workerLogger.progname}/job.miner.id", toConsole: Config.settings[:show_miner_output])
        
             # Create subprocess (INSECURE - uses shell, so don't pass any external data in.
             cmd = "#{@job.miner.exec} #{@job.miner.args(job)}"
-            @logger.debug("Command: #{cmd}")
+            @workerLogger.debug("Command: #{cmd}")
 
             # Linux and windows miners behave differently and need different process code.
             if (Gem.win_platform?)
-                @logger.debug("Using pipes for IO")
+                @workerLogger.debug("Using pipes for IO")
                 
                 require 'open3'
                 
@@ -50,9 +55,9 @@ class Executor
                     # Read until pipe closes
                     until (rawLine = stdout.gets).nil? do
                         line = rawLine.chomp() # Get rid of trailing newline
-                        @logger.info(line)
+                        @minerLogger.info(line)
                     end
-                    @logger.debug("Read thread ended")
+                    @workerLogger.debug("Read thread ended")
                 }
 
                 Thread.new {
@@ -62,13 +67,13 @@ class Executor
                     
                     # join returns when process finishes
                     @running = false
-                    @logger.info("Process terminated.")
+                    @workerLogger.info("Process terminated.")
                 }
                 
-                @logger.debug("Finished starting")
+                @workerLogger.debug("Finished starting")
             # For anything other than windows, use a PTY
             else
-                @logger.debug("Using PTY for IO")
+                @workerLogger.debug("Using PTY for IO")
                 # Have to use PTYs because *SOME* miners don't know how to talk to a pipe
                 require 'pty'
 
@@ -85,14 +90,14 @@ class Executor
                         # Read until pipe closes
                         until (rawLine = master.gets()).nil? do
                             line = rawLine.chomp() # Get rid of trailing newline
-                            @logger.info(line)
+                            @minerLogger.info(line)
                         end
                     rescue e
-                        @logger.warn("Exception in read thread: #{e}")
+                        @workerLogger.warn("Exception in read thread: #{e}")
                     ensure
                         @running = false
                         master.close()
-                        @logger.info("Process ended.")
+                        @workerLogger.info("Process ended.")
                     end
                 }
 
@@ -102,7 +107,7 @@ class Executor
     
     def stop()
         if (alive?())
-            @logger.info("Termining #{@job.miner.name}...")
+            @workerLogger.info("Termining #{@job.miner.name}...")
             
             # Process.kill() is currently broken on windows.
             # See https://blog.simplificator.com/2016/01/18/how-to-kill-processes-on-windows-using-ruby/
@@ -110,7 +115,7 @@ class Executor
                 if (!system("taskkill /pid #{@pid}"))
                     # Some processes must be forcefully killed
                     if (!system("taskkill /f /pid #{@pid}"))
-                        @logger.error("Unable to stop miner!")
+                        @workerLogger.error("Unable to stop miner!")
                     end
                 end
             else
@@ -119,10 +124,11 @@ class Executor
             end
             
             #Process.wait(@pid)
-            @logger.info("#{@job.miner.name} stopped.")
+            @workerLogger.info("#{@job.miner.name} stopped.")
         end
         @job = nil
-        @logger = nil
+        @workerLogger = nil
+        @minerLogger = nil
         @pid = nil
         @running = false
     end
