@@ -1,13 +1,15 @@
 #
-# total_balance.rb
-# Adds up a user's total balance of all coins
+# total_balance_coingecko.rb
+# Adds up a user's total balance of all coins using rates from coingecko.
+#
+# Based on a private API, so may break at any time
 # 
 
 require 'json'
 require 'net/http'
 
 #
-# CoinGecko ID generation settings
+# CoinGecko ID generation settings.  Don't change unless you understand.
 #
 
 # URL to download from
