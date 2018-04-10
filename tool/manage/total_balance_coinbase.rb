@@ -153,6 +153,7 @@ if (ARGV.length >= 1)
     options[:coin_precision] = 8
     options[:fiat_precision] = 2
 	options[:ae_coin] = "bitcoin"
+    options[:showTime] = false
 
     # Read options if avaialable
     for i in (1...ARGV.length)
@@ -168,6 +169,8 @@ if (ARGV.length >= 1)
             options[:ignored_coins] << arg.sub("-ignore=", "").downcase()
 		elsif (arg.start_with? "-ae_coin=")
 			options[:ae_coin] = arg.sub("-ae_coin=", "").downcase()
+		elsif (arg == "-time")    
+            options[:showTime] = true
         else
             puts "Unknown option: #{arg}"
         end
@@ -182,8 +185,14 @@ if (ARGV.length >= 1)
 		# Find ae_coin
 		aeCoin = balance.coins[options[:ae_coin]]
 		if (aeCoin == nil)
-			puts "Enable to find ae_coin: #{options[:ae_coin]}.  Using Bitcoin."
+			puts "Enable to find ae_coin: #{options[:ae_coin]}.  Using bitcoin."
 			aeCoin = balance.coins['bitcoin']
+		end
+	
+		# Print time
+		if (options[:showTime])
+			time = Time.now.localtime
+			puts "Balance at #{time.to_i} (#{time.strftime("%H:%M:%S")}):"
 		end
 	
         # Print individual values
