@@ -38,14 +38,42 @@ module Wkr
 
     # An algorithm supported by a specific worker
     class WorkerAlgorithm
-        def initialize(algorithm, wkrMiners)
+        def initialize(algorithm, wkrMiners, whitelist, blacklist)
             @algorithm = algorithm
             
             # Sort by descending rate
             @wkrMiners = wkrMiners.sort() {|m1, m2| m2.rate <=> m1.rate}
+            
+            @whitelistCoins = whitelist
+            @blacklistCoins = blacklist
         end
         
-        attr_reader :algorithm, :wkrMiners
+        attr_reader :algorithm, :wkrMiners, :whitelistCoins, :blacklistCoins
+        
+        def supportsCoin?(coin)
+            # first make sure algo matches
+            if (@algorithm.supportsCoin? coin)
+                
+                # if there is a whitelist and this coin is not in it
+                if (@whitelistCoins != nil && !@whitelistCoins.include?(coin))
+                    Wkr.logger.debug {"Whitelist excluding #{coin}."}
+                    return false
+                end
+                
+                # if there is a blacklist and this coin is in it
+                if (@blacklistCoins != nil && @blacklistCoins.include?(coin))
+                    Wkr.logger.debug {"Blacklist excluding #{coin}."}
+                    return false
+                end
+                
+                # algo supports and lists allow
+                return true
+            else
+                # not supported
+                return false
+            end
+            
+        end
         
         def self.createFromJSON(id, json)
             # Load miners
@@ -58,7 +86,7 @@ module Wkr
                 Coins.logger.warn("Missing algorithm: #{id}")
                 return nil
             else
-                return WorkerAlgorithm.new(alg, wkrMiners)
+                return WorkerAlgorithm.new(alg, wkrMiners, json[:whitelist_coins], json[:blacklist_coins])
             end
         end
     end
@@ -110,10 +138,11 @@ module Wkr
     end
 
     class Worker
-        def initialize(name, id, profitField, algorithms)
+        def initialize(name, id, profitField, algorithms, percentProfitThreshold)
             @name = name
             @id = id
             @profitField = profitField
+            @percentProfitThreshold = percentProfitThreshold
             
             # Map algorithm ID -> workerAlgorithm@algos[Coins.Coins[statCoin[:coin_name]]
             @algos = algorithms
@@ -171,10 +200,12 @@ module Wkr
         def switchAlgo(stats)
             # only include coins that we have miners for, then sort by descending profit
             statCoins = stats
-                .select {|statCoin| @algos.any?{|id, wkrAlgo| wkrAlgo.algorithm.supportsCoin?(statCoin[:coin_name])}}
+                .select {|statCoin| @algos.any?{|id, wkrAlgo| wkrAlgo.supportsCoin?(statCoin[:coin_name])}}
                 .each {|statCoin| statCoin[:CalculatedProfit] = calcProfit(statCoin)}
                 .sort {|a, b| b[:CalculatedProfit] <=> a[:CalculatedProfit]}
             ;
+            
+            #.select {|statCoin| @algos.any?{|id, wkrAlgo| wkrAlgo.algorithm.supportsCoin?(statCoin[:coin_name])}}
             
             # Debug print profit
             #statCoins.each {|statCoin|
@@ -197,29 +228,37 @@ module Wkr
                 
                 # Lokup matching coin
                 coin = Coins.coins[coinName]
-                # Get WorkerAlgorithm for this coin
-                wkrAlgo = @algos[coin.algorithm.id]
-                # Get best miner for this coin
-                miner = wkrAlgo.wkrMiners[0].miner
                 
-                # Create host for this task
-                host = Host.new(statCoin[:direct_mining_host], statCoin[:port])
-                
-                # Start mining only if the task parameters have changed
-                if (@currentJob == nil || !@currentJob.same?(wkrAlgo.algorithm, coin, miner, host))
-                    # start job
-                    @logger.info("Switching to #{coinName}")
+                # Make sure profit increase exceeds threshold
+                currentStatCoin = statCoins.find{|statCoin| (@currentJob != nil) && (statCoin[:coin_name] == @currentJob.coin.id)}
+                if (currentStatCoin == nil || (statCoin[:CalculatedProfit] >= (currentStatCoin[:CalculatedProfit]) * @percentProfitThreshold))
                     
-                    # Stop current job, if there is one
-                    if (@currentJob != nil)
-                        @currentJob.stop()
+                    # Get WorkerAlgorithm for this coin
+                    wkrAlgo = @algos[coin.algorithm.id]
+                    # Get best miner for this coin
+                    miner = wkrAlgo.wkrMiners[0].miner
+                    
+                    # Create host for this task
+                    host = Host.new(statCoin[:direct_mining_host], statCoin[:port])
+                    
+                    # Start mining only if the task parameters have changed
+                    if (@currentJob == nil || !@currentJob.same?(wkrAlgo.algorithm, coin, miner, host))
+                        # start job
+                        @logger.info("Switching to #{coinName}")
+                        
+                        # Stop current job, if there is one
+                        if (@currentJob != nil)
+                            @currentJob.stop()
+                        end
+                        
+                        # Set up new job
+                        @currentJob = WorkerJob.new(self, wkrAlgo.algorithm, coin, miner, host)
+                        @currentJob.start()
+                    else
+                        @logger.debug("Not changing coins")
                     end
-                    
-                    # Set up new job
-                    @currentJob = WorkerJob.new(self, wkrAlgo.algorithm, coin, miner, host)
-                    @currentJob.start()
                 else
-                    @logger.debug("Not changing coins")
+                    @logger.debug {"Not switching from #{@currentJob.coin.id} to #{coin.id} (not enough increase)."}
                 end
             else
                 @logger.error("No valid coins for worker #{@name}, not switching!")
@@ -246,10 +285,14 @@ module Wkr
             }
             
             # Create worker
-            return Worker.new(json[:name], id, "profit", algs)
+            return Worker.new(json[:name], id, "profit", algs, json[:percentProfitThreshold])
         end
     end
 
+    def self.logger()
+        return @@logger
+    end
+    
     # Loads all workers from config file
     def self.loadWorkers()
         workers = []

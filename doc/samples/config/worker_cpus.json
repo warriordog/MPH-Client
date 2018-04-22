@@ -1,10 +1,14 @@
 {
-  "config_version": 5,
+  "config_version": 7,
   "workers": {
     "cpus": {
       "name": "CPUs",
+      "percentProfitThreshold": "1.1",
       "algorithms": {
         "cryptonight": {
+          "blacklist_coins": [
+            "electroneum"
+          ],
           "miners": {
             "xmr-stak": {
               "rate": 100

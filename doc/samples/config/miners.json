@@ -1,11 +1,14 @@
 {
-  "config_version": 5,
+  "config_version": 6,
   "miners": {
     "xmr-stak": {
       "name": "XMR-stak",
       "path": "miners/xmr-stak",
       "exec": "./xmr-stak",
-      "args": "--noAMD --noNVIDIA --currency #COIN# -o #HOST#:#PORT# -u #ACCOUNT#.#WORKER_ID# -p z"
+      "args": "--noAMD --noNVIDIA --noUAC --currency #COIN# -O #HOST#:#PORT# -u #ACCOUNT#.#WORKER_ID# -p z",
+      "remap_coins": {
+        "monero": "monero7"
+      }
     },
     "ccminer": {
       "name": "CCMiner",

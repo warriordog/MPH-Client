@@ -31,13 +31,18 @@ module MPHClient
                 if (stats != nil)
                     # switch (or not)
                     workers.each {|w| w.switchAlgo(stats)}
-                else
-                    logger.error("Unable to get stats, stopping miners.")
-                    workers.each {|w| w.stopMining()}
-                end
                 
-                # Only change every n seconds
-                sleep(Config.settings[:switch_interval])
+                    # Sleep until next switch interval
+                    sleep Config.settings[:switch_interval]
+                else
+                    # Time until attempt to reconnect
+                    delay = Config.settings[:reconnect_interval]
+                    
+                    logger.error("Unable to get stats, stopping miners.  Trying again in #{delay} seconds.")
+                    workers.each {|w| w.stopMining()}
+                    
+                    sleep delay
+                end
             end
         }
         
@@ -49,33 +54,36 @@ module MPHClient
     
     def self.start()
         # Print version
-        @@rootLog.info("MPH-Client v0.1.0 (development)")
+        @@rootLog.info("MPH-Client v0.1.1 (development)")
 
         # Load config
         if (ARGV.length > 0)
             configFile = ARGV[0]
             if (File.file?(configFile))
-                Config.loadConfig(configFile)
-                if (Config.cfg != nil)            
-                    # Set up logging
-                    Log.defaultLogToFile = Config.settings[:log_to_file]
-                    Log.defaultMinLevel = Logger::Severity.const_get(Config.settings[:log_level])
+                if (Config.loadConfig(configFile)) 
+                    if (!Config.workers.empty?)
+                        # Set up logging
+                        Log.defaultLogToFile = Config.settings[:log_to_file]
+                        Log.defaultMinLevel = Logger::Severity.const_get(Config.settings[:log_level])
+                        
+                        # Create "real" root logger
+                        @@rootLog = Log.createLogger("root")
                     
-                    # Create "real" root logger
-                    @@rootLog = Log.createLogger("root")
-                
-                    # Load coins and algorithms
-                    Coins.loadAlgorithms()
-                
-                    # Load miners
-                    Miners.loadMiners()
-                
-                    # Load workers
-                    workers = Wkr.loadWorkers()
+                        # Load coins and algorithms
+                        Coins.loadAlgorithms()
                     
-                    # Start mining
-                    @@rootLog.info("Starting mine cycle.")
-                    runMainLoop(workers)
+                        # Load miners
+                        Miners.loadMiners()
+                    
+                        # Load workers
+                        workers = Wkr.loadWorkers()
+                        
+                        # Start mining
+                        @@rootLog.info("Starting mine cycle.")
+                        runMainLoop(workers)
+                    else
+                        @@rootLog.fatal("No workers were loaded.  Unable to mine.")
+                    end
                 else
                     @@rootLog.fatal("Failed to load config file.  Please check for errors!")
                 end
