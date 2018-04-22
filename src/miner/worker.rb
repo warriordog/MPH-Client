@@ -256,7 +256,7 @@ module Wkr
     # Loads all workers from config file
     def self.loadWorkers()
         workers = []
-        Config.workers.each {|id, wkr| puts "Adding worker #{id} as #{wkr}"; workers << Worker.createFromJSON(id, wkr)}
+        Config.workers.each {|id, wkr| workers << Worker.createFromJSON(id, wkr)}
         return workers
     end
 end
