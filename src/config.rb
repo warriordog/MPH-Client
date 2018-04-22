@@ -6,6 +6,12 @@ require 'json'
 
 require 'util/log'
 
+CFG_VERSION_DEFAULT = 5
+CFG_VERSION_MAIN = 5
+CFG_VERSION_ALGORITHMS = 5
+CFG_VERSION_MINERS = 5
+CFG_VERSION_WORKERS = 5
+
 module Config
     # Module logger
     @@logger = Log.createLogger("Config")
@@ -27,25 +33,25 @@ module Config
 
     def self.loadConfig(cfgfile)
         # Read main file
-        json = self.loadJson(cfgfile);
+        json = self.loadJson(cfgfile, CFG_VERSION_MAIN);
         
         # Make sure it loaded
         if (json != nil)
             @@cfg = json
             @@settings = json[:settings]
-            @@algorithms = self.loadJson(json[:algorithms])[:algorithms]
-            @@miners = self.loadJson(json[:miners])[:miners]
+            @@algorithms = self.loadJson(json[:algorithms], CFG_VERSION_ALGORITHMS)[:algorithms]
+            @@miners = self.loadJson(json[:miners], CFG_VERSION_MINERS)[:miners]
             
             @@workers = {}
             json[:workers].each { |workerFile|
-                self.loadJson(workerFile)[:workers].each { |id, worker|
+                self.loadJson(workerFile, CFG_VERSION_WORKERS)[:workers].each { |id, worker|
                     @@workers[id.to_s] = worker
                 }
             }
         end
     end
     
-    def self.loadJson(path)
+    def self.loadJson(path, expectedVersion = CFG_VERSION_DEFAULT)
         # Read file as string of json
         file = IO.read(path)
         if (file != nil)
@@ -57,7 +63,7 @@ module Config
                 # Make sure its valid
                 if (json != nil)
                     # check version
-                    if (json[:config_version] == 5)
+                    if (json[:config_version] == expectedVersion)
                         
                         # It's good!
                         return json
