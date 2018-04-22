@@ -15,9 +15,6 @@ CFG_VERSION_WORKERS = 5
 module Config
     # Module logger
     @@logger = Log.createLogger("Config")
-
-    # Config file instance
-    @@cfg = nil
     
     # Settings hash
     @@settings = nil
@@ -37,7 +34,6 @@ module Config
         
         # Make sure it loaded
         if (json != nil)
-            @@cfg = json
             @@settings = json[:settings]
             @@algorithms = self.loadJson(json[:algorithms], CFG_VERSION_ALGORITHMS)[:algorithms]
             @@miners = self.loadJson(json[:miners], CFG_VERSION_MINERS)[:miners]
@@ -48,7 +44,13 @@ module Config
                     @@workers[id.to_s] = worker
                 }
             }
+            if (@@workers.empty?)
+                @@logger.warn "No workers loaded, please check your config"
+            end
         end
+        
+        # Make sure it loaded
+        return @@settings != nil && @@algorithms != nil && @@miners != nil && @@workers != nil
     end
     
     def self.loadJson(path, expectedVersion = CFG_VERSION_DEFAULT)
@@ -85,12 +87,8 @@ module Config
             @@logger.fatal("Unable to access config file '#{path}'.")
         end
         
-        # Return nill on error
+        # Return nil on error
         return nil
-    end
-    
-    def self.cfg()
-        return @@cfg
     end
     
     def self.settings()

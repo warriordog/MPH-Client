@@ -55,27 +55,30 @@ module MPHClient
         if (ARGV.length > 0)
             configFile = ARGV[0]
             if (File.file?(configFile))
-                Config.loadConfig(configFile)
-                if (Config.cfg != nil)            
-                    # Set up logging
-                    Log.defaultLogToFile = Config.settings[:log_to_file]
-                    Log.defaultMinLevel = Logger::Severity.const_get(Config.settings[:log_level])
+                if (Config.loadConfig(configFile)) 
+                    if (!Config.workers.empty?)
+                        # Set up logging
+                        Log.defaultLogToFile = Config.settings[:log_to_file]
+                        Log.defaultMinLevel = Logger::Severity.const_get(Config.settings[:log_level])
+                        
+                        # Create "real" root logger
+                        @@rootLog = Log.createLogger("root")
                     
-                    # Create "real" root logger
-                    @@rootLog = Log.createLogger("root")
-                
-                    # Load coins and algorithms
-                    Coins.loadAlgorithms()
-                
-                    # Load miners
-                    Miners.loadMiners()
-                
-                    # Load workers
-                    workers = Wkr.loadWorkers()
+                        # Load coins and algorithms
+                        Coins.loadAlgorithms()
                     
-                    # Start mining
-                    @@rootLog.info("Starting mine cycle.")
-                    runMainLoop(workers)
+                        # Load miners
+                        Miners.loadMiners()
+                    
+                        # Load workers
+                        workers = Wkr.loadWorkers()
+                        
+                        # Start mining
+                        @@rootLog.info("Starting mine cycle.")
+                        runMainLoop(workers)
+                    else
+                        @@rootLog.fatal("No workers were loaded.  Unable to mine.")
+                    end
                 else
                     @@rootLog.fatal("Failed to load config file.  Please check for errors!")
                 end
