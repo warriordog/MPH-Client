@@ -134,59 +134,29 @@ module Wkr
             if (algo != nil)
                 wkrMiners = algo.wkrMiners
                 if (!wkrMiners.empty?)
-                    # wkrMiners are sorted
-                    miner = wkrMiners[0]
                 
-                    # BTC / Gh / day
-                    statProfit = statCoin[@profitField.to_sym].to_f
-#                    @logger.debug  {"Pool profit for #{statCoin[:coin_name]} is #{statProfit} BTC / Gh / day"}
+                    # Calculate best miner hashrate
+                    miner = wkrMiners[0] # wkrMiners are sorted with most profitable first
+                    minerHperS = miner.rate.to_f # Our rate in H/s
+                    minerGHperS = minerHperS / 1000000000.0 # Our rate in Gh/s
                     
-                    # Pool rate in Mh/s
-                    totalRateM = MPH.parseRateMh(statCoin[:pool_hash])
-#                    @logger.debug {"Pool rate for #{statCoin[:coin_name]} is #{totalRateM}Mh/s"}
-                    
-                    # Our rate in H/s
-                    ourRateH = miner.rate.to_f
-                    
-                    
-=begin
-                    
-                    # Our rate in Mh/s
-                    ourRateM = ourRateH / 1000000.0 
-                    
-                    # Percent of pool hashrate that will be ours
-                    #ratePercent = totalRateM / ourRateM
-                    ratePercent = ourRateM / totalRateM
-                    
-                    # Calculate profit (does not adjust for time, but that doesn't matter here)
-                    calcProfit = statProfit * ratePercent
+                    # Calculate pool hashrate
+                    poolMHperS = MPH.parseRateMh(statCoin[:pool_hash]) # Pool rate in Mh/s
+                    poolGHperS = poolMHperS / 1000.0 # Pool rate in GH/s
 
-                    poolMHperD = totalRateM * 86400.0 # 86400 seconds in a day
-                    poolGHperD = poolMHperD / 1000.0 # 1000 Megahashes in a Gigahash
-                    poolProfit = poolGHperD * statProfit # Result is estimated profit of pool
-                    @logger.debug {"calculated pool profit for #{statCoin[:coin_name]} on #{miner.miner.id}: #{poolProfit}"}
+                    # Calculate pool profit
+                    rawProfit = statCoin[@profitField.to_sym].to_f # BTC / (Gh/s) / day
+                    poolProfit = rawProfit * poolGHperS # rawProfit * (Gh/s) * 1 day
                     
-                    myHperD = ourRateH * 86400.0 # 86400 seconds in a day
-                    myGHperD = myHperD / 1000000000.0 # 1000000000 hashes in a Gh
-                    newProfit = myGHperD * statProfit # Result is estimated profit at our hashrate
-=end
-                    
-                    # new profit function
-                    poolGHperS = totalRateM / 1000.0
-                    poolProfit = statProfit * poolGHperS * 1
- #                   @logger.debug {"Pool test profit for 1 day: #{poolProfit}"}
-                    
-                    myGHperS = ourRateH / 1000000000.0 # 1000000000 hashes in a Gh
+                    # Calculate miner profit
                     # TODO add our hashrate if we aren't already mining
-                    myPercent = myGHperS / poolGHperS  # percent of pool hashrate that is mine
-                    newProfit = poolProfit * myPercent
+                    hashratePercent = minerGHperS / poolGHperS  # percent of pool hashrate that is mine
+                    minerProfit = poolProfit * hashratePercent
                     
                     # Debug print profit
-                    #@logger.debug {"OLD calculated profit for #{statCoin[:coin_name]} on #{miner.miner.id}: #{calcProfit}"}
-                    @logger.debug {"calculated profit for #{statCoin[:coin_name]} on #{miner.miner.id}: #{newProfit}"}
+                    @logger.debug {"calculated profit for #{statCoin[:coin_name]} on #{miner.miner.id}: #{minerProfit}"}
                     
-                    #return calcProfit;
-                    return newProfit
+                    return minerProfit
                 else
                     @logger.error("No miners for coin #{statCoin[:coin_name]}")
                 end
