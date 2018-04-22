@@ -1,0 +1,47 @@
+{
+  "config_version": 5,
+  "algorithms": {
+    "equihash": {
+      "name": "Equihash",
+      "coins": {
+        "bitcoin-gold": {
+          "name": "Bitcoin Gold"
+        },
+        "zencash": {
+          "name": "Zencash"
+        },
+        "zcash": {
+          "name": "Zcash"
+        },
+        "zclassic": {
+          "name": "Zclassic"
+        }
+      }
+    },
+    "cryptonight": {
+      "name": "Cryptonight",
+      "coins": {
+        "monero": {
+          "name": "Monero"
+        }
+      }
+    },
+    "ethash": {
+      "name": "Ethash",
+      "coins": {
+        "ethereum": {
+          "name": "Ethereum"
+        },
+        "musicoin": {
+          "name": "Musicoin"
+        },
+        "ethereum-classic": {
+          "name": "Ethereum Classic"
+        },
+        "expanse": {
+          "name": "Expanse"
+        }
+      }
+    }
+  }
+}

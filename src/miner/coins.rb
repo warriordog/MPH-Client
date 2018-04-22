@@ -33,9 +33,9 @@ module Coins
             return @coins.include?(coin) || @coins.include?(Coins.coins[coin])
         end
         
-        def self.createFromJSON(json)
-            alg = Algorithm.new(json[:id], json[:name])
-            json[:coins].each {|coin| alg.addCoin(Coin.createFromJSON(coin, alg))}
+        def self.createFromJSON(id, json)
+            alg = Algorithm.new(id, json[:name])
+            json[:coins].each {|coinId, coinJson| alg.addCoin(Coin.createFromJSON(coinId.to_s, coinJson, alg))}
             return alg
         end
     end
@@ -50,14 +50,14 @@ module Coins
         
         attr_reader :id, :name, :algorithm
         
-        def self.createFromJSON(json, algorithm)
-            return Coin.new(json[:id], json[:name], algorithm)
+        def self.createFromJSON(id, json, algorithm)
+            return Coin.new(id, json[:name], algorithm)
         end
     end
 
-    def self.loadAlgorithm(json)
+    def self.loadAlgorithm(id, json)
         # Create algorithm
-        alg = Algorithm.createFromJSON(json)
+        alg = Algorithm.createFromJSON(id, json)
         
         # Add to hash
         if (Coins.algorithms[alg.id] != nil)
@@ -66,7 +66,7 @@ module Coins
         Coins.algorithms[alg.id] = alg
         
         # Add cointained coins
-        alg.coins.each {|coin| 
+        alg.coins.each {|coin|
             if (Coins.coins[coin.id] != nil)
                 Coins.logger.warn("Duplicate coin #{coin.id}.")
             end
@@ -75,7 +75,7 @@ module Coins
     end
     
     def self.loadAlgorithms()
-        Config.algorithms.each{|json| loadAlgorithm(json)}
+        Config.algorithms.each{|id, json| loadAlgorithm(id.to_s, json)}
     end
     
     def self.algorithms()

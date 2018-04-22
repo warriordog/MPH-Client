@@ -20,16 +20,16 @@ module Wkr
     class WorkerMiner
         def initialize(miner, rate)
             @miner = miner
-            @rate = rate
+            @rate = rate.to_i
         end
         
         attr_reader :miner, :rate
         
-        def self.createFromJSON(json)
+        def self.createFromJSON(id, json)
             # Look up miner
-            miner = Miners.miners[json[:id]]
+            miner = Miners.miners[id]
             if (miner == nil)
-                Coins.logger.warn("Missing miner: #{json[:id]}")
+                Coins.logger.warn("Missing miner: #{id}")
             end
             
             return WorkerMiner.new(miner, json[:rate])
@@ -42,20 +42,20 @@ module Wkr
             @algorithm = algorithm
             
             # Sort by descending rate
-            @wkrMiners = wkrMiners.sort() {|m1, m2| m2.rate.to_i <=> m1.rate.to_i}
+            @wkrMiners = wkrMiners.sort() {|m1, m2| m2.rate <=> m1.rate}
         end
         
         attr_reader :algorithm, :wkrMiners
         
-        def self.createFromJSON(json)
+        def self.createFromJSON(id, json)
             # Load miners
             wkrMiners = []
-            json[:miners].each {|miner| wkrMiners << WorkerMiner.createFromJSON(miner)}
+            json[:miners].each {|minerId, minerJson| wkrMiners << WorkerMiner.createFromJSON(minerId.to_s, minerJson)}
         
             # Look up algorithm
-            alg = Coins.algorithms[json[:id]]
+            alg = Coins.algorithms[id]
             if (alg == nil)
-                Coins.logger.warn("Missing algorithm: #{json[:id]}")
+                Coins.logger.warn("Missing algorithm: #{id}")
                 return nil
             else
                 return WorkerAlgorithm.new(alg, wkrMiners)
@@ -124,7 +124,7 @@ module Wkr
         
         # Add getters
         attr_reader :name, :id, :profitField, :algos, :logger, :currentJob
-		
+        
         # Find the profit for a specified coin
         def calcProfit(statCoin)
             # Get algorithm for coin name, then look up WorkerAlgorithm by ID
@@ -132,30 +132,29 @@ module Wkr
             if (algo != nil)
                 wkrMiners = algo.wkrMiners
                 if (!wkrMiners.empty?)
-					# wkrMiners are sorted
-					miner = wkrMiners[0]
-				
-					# BTC / Gh / day
-                    statProfit = statCoin[@profitField.to_sym].to_f
-					
-					# Rate in Mh/s
-					totalRateM = MPH.parseRateMh(statCoin[:pool_hash])
-					
-					# Our rate in H/s
-                    ourRateH = miner.rate.to_f
-					# Our rate in Mh/s
-					ourRateM = ourRateH / 1000000.0 
-					
-					# Percent of pool hashrate that will be ours
-					ratePercent = totalRateM / ourRateM
-					
-                    # Calculate profit (does not adjust for time, but that doesn't matter here)
-                    calcProfit = statProfit * ratePercent
-					
-					# Debug print profit
-					#@logger.debug {"Calculated profit for #{statCoin[:coin_name]} on #{miner.miner.id}: #{calcProfit}"}
-					
-					return calcProfit;
+                
+                    # Calculate best miner hashrate
+                    miner = wkrMiners[0] # wkrMiners are sorted with most profitable first
+                    minerHperS = miner.rate.to_f # Our rate in H/s
+                    minerGHperS = minerHperS / 1000000000.0 # Our rate in Gh/s
+                    
+                    # Calculate pool hashrate
+                    poolMHperS = MPH.parseRateMh(statCoin[:pool_hash]) # Pool rate in Mh/s
+                    poolGHperS = poolMHperS / 1000.0 # Pool rate in GH/s
+
+                    # Calculate pool profit
+                    rawProfit = statCoin[@profitField.to_sym].to_f # BTC / (Gh/s) / day
+                    poolProfit = rawProfit * poolGHperS # rawProfit * (Gh/s) * 1 day
+                    
+                    # Calculate miner profit
+                    # TODO add our hashrate if we aren't already mining
+                    hashratePercent = minerGHperS / poolGHperS  # percent of pool hashrate that is mine
+                    minerProfit = poolProfit * hashratePercent
+                    
+                    # Debug print profit
+                    @logger.debug {"calculated profit for #{statCoin[:coin_name]} on #{miner.miner.id}: #{minerProfit}"}
+                    
+                    return minerProfit
                 else
                     @logger.error("No miners for coin #{statCoin[:coin_name]}")
                 end
@@ -173,7 +172,7 @@ module Wkr
             # only include coins that we have miners for, then sort by descending profit
             statCoins = stats
                 .select {|statCoin| @algos.any?{|id, wkrAlgo| wkrAlgo.algorithm.supportsCoin?(statCoin[:coin_name])}}
-				.each {|statCoin| statCoin[:CalculatedProfit] = calcProfit(statCoin)}
+                .each {|statCoin| statCoin[:CalculatedProfit] = calcProfit(statCoin)}
                 .sort {|a, b| b[:CalculatedProfit] <=> a[:CalculatedProfit]}
             ;
             
@@ -186,8 +185,8 @@ module Wkr
                     #prof = m.rate.to_f * statProfit
                     #gProf = gRate * statProfit
                     #@logger.debug {"Profit for #{statCoin[:coin_name]} on #{m.miner.id}:  #{statProfit} * #{m.rate}H/s (#{gRate}GH/s) = #{prof} (#{gProf}))"}
-			#		
-			#	}
+            #        
+            #    }
             #}
             
             # Make sure there was at least one good coin
@@ -236,25 +235,25 @@ module Wkr
         end
         
         # Load from json
-        def self.createFromJSON(json)
+        def self.createFromJSON(id, json)
             # Create WorkerAlgorithms
             algs = {}
-            json[:algorithms].each {|alg| 
-                wkrAlg = WorkerAlgorithm.createFromJSON(alg)
+            json[:algorithms].each {|algId, algJson| 
+                wkrAlg = WorkerAlgorithm.createFromJSON(algId.to_s, algJson)
                 if (wkrAlg != nil)
                     algs[wkrAlg.algorithm.id] = wkrAlg
                 end
             }
             
             # Create worker
-            return Worker.new(json[:name], json[:id], json[:profit_field], algs)
+            return Worker.new(json[:name], id, "profit", algs)
         end
     end
 
     # Loads all workers from config file
     def self.loadWorkers()
         workers = []
-        Config.workers.each {|wkr| workers << Worker.createFromJSON(wkr)}
+        Config.workers.each {|id, wkr| workers << Worker.createFromJSON(id, wkr)}
         return workers
     end
 end
