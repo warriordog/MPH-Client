@@ -23,6 +23,9 @@
       "coins": {
         "monero": {
           "name": "Monero"
+        },
+        "electroneum": {
+          "name": "Electroneum"
         }
       }
     },

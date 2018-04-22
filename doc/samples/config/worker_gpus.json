@@ -1,5 +1,5 @@
 {
-  "config_version": 6,
+  "config_version": 7,
   "workers": {
     "gpus_nvidia": {
       "name": "NVIDIA GPUs",
@@ -35,9 +35,12 @@
             }
           }
         },"ethash": {
+          "whitelist_coins": [
+            "ethereum"
+          ],
           "miners": {
             "ethminer": {
-              "rate": 500
+              "rate": 20000000
             }
           }
         }

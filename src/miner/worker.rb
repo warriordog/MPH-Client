@@ -38,14 +38,42 @@ module Wkr
 
     # An algorithm supported by a specific worker
     class WorkerAlgorithm
-        def initialize(algorithm, wkrMiners)
+        def initialize(algorithm, wkrMiners, whitelist, blacklist)
             @algorithm = algorithm
             
             # Sort by descending rate
             @wkrMiners = wkrMiners.sort() {|m1, m2| m2.rate <=> m1.rate}
+            
+            @whitelistCoins = whitelist
+            @blacklistCoins = blacklist
         end
         
-        attr_reader :algorithm, :wkrMiners
+        attr_reader :algorithm, :wkrMiners, :whitelistCoins, :blacklistCoins
+        
+        def supportsCoin?(coin)
+            # first make sure algo matches
+            if (@algorithm.supportsCoin? coin)
+                
+                # if there is a whitelist and this coin is not in it
+                if (@whitelistCoins != nil && !@whitelistCoins.include?(coin))
+                    Wkr.logger.debug {"Whitelist excluding #{coin}."}
+                    return false
+                end
+                
+                # if there is a blacklist and this coin is in it
+                if (@blacklistCoins != nil && @blacklistCoins.include?(coin))
+                    Wkr.logger.debug {"Blacklist excluding #{coin}."}
+                    return false
+                end
+                
+                # algo supports and lists allow
+                return true
+            else
+                # not supported
+                return false
+            end
+            
+        end
         
         def self.createFromJSON(id, json)
             # Load miners
@@ -58,7 +86,7 @@ module Wkr
                 Coins.logger.warn("Missing algorithm: #{id}")
                 return nil
             else
-                return WorkerAlgorithm.new(alg, wkrMiners)
+                return WorkerAlgorithm.new(alg, wkrMiners, json[:whitelist_coins], json[:blacklist_coins])
             end
         end
     end
@@ -172,10 +200,12 @@ module Wkr
         def switchAlgo(stats)
             # only include coins that we have miners for, then sort by descending profit
             statCoins = stats
-                .select {|statCoin| @algos.any?{|id, wkrAlgo| wkrAlgo.algorithm.supportsCoin?(statCoin[:coin_name])}}
+                .select {|statCoin| @algos.any?{|id, wkrAlgo| wkrAlgo.supportsCoin?(statCoin[:coin_name])}}
                 .each {|statCoin| statCoin[:CalculatedProfit] = calcProfit(statCoin)}
                 .sort {|a, b| b[:CalculatedProfit] <=> a[:CalculatedProfit]}
             ;
+            
+            #.select {|statCoin| @algos.any?{|id, wkrAlgo| wkrAlgo.algorithm.supportsCoin?(statCoin[:coin_name])}}
             
             # Debug print profit
             #statCoins.each {|statCoin|
@@ -259,6 +289,10 @@ module Wkr
         end
     end
 
+    def self.logger()
+        return @@logger
+    end
+    
     # Loads all workers from config file
     def self.loadWorkers()
         workers = []
