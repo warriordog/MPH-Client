@@ -13,12 +13,18 @@ module Miners
     @@miners = {}
     
     class Miner
-        def initialize(id, name, path, exec, args)
+        def initialize(id, name, path, exec, args, remap)
             @id = id
             @name = name
             @path = path
             @exec = exec
             @args = args
+            
+            # Map of symbol -> string
+            @remapCoins = remap
+            
+            # If remap is nil then set default
+            @remapCoins ||= {}
         end
         
         attr_reader :id, :name, :path, :exec
@@ -31,14 +37,26 @@ module Miners
                 .gsub("#PORT#", job.host.port.to_s)
                 .gsub("#WORKER_ID#", job.worker.id.to_s)
                 .gsub("#ACCOUNT#", Config.settings[:account].to_s)
-                .gsub("#COIN#", job.coin.id.to_s)
+                .gsub("#COIN#", self.remapCoin(job.coin.id.to_s))
                 .gsub("#ALGORITHM#", job.algorithm.id.to_s)
             ;
         end
         
-        def self.createFromJSON(id, json)
-            return Miner.new(id, json[:name], json[:path], json[:exec], json[:args])
+        def remapCoin(inCoin)
+            outCoin = @remapCoins[inCoin.to_sym] # set outcoin to remap coin
+            outCoin ||= inCoin # if outcoin is nil (no remap coin) then set to input
+            
+            if (inCoin != outCoin)
+                Miners.logger.debug {"Remapping #{inCoin} to #{outCoin} for #{@id}"}
+            end
+            
+            return outCoin
         end
+        
+        def self.createFromJSON(id, json)
+            return Miner.new(id, json[:name], json[:path], json[:exec], json[:args], json[:remap_coins])
+        end
+        
     end
     
     # Parses a miner and adds it to the miner hash
@@ -59,5 +77,9 @@ module Miners
     
     def self.miners()
         return @@miners
+    end
+    
+    def self.logger()
+        return @@logger
     end
 end
