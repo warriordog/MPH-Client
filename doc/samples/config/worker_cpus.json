@@ -1,0 +1,17 @@
+{
+  "config_version": 5,
+  "workers": {
+    "cpus": {
+      "name": "CPUs",
+      "algorithms": {
+        "cryptonight": {
+          "miners": {
+            "xmr-stak": {
+              "rate": 100
+            }
+          }
+        }
+      }
+    }
+  }
+}

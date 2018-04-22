@@ -36,14 +36,14 @@ module Miners
             ;
         end
         
-        def self.createFromJSON(json)
-            return Miner.new(json[:id], json[:name], json[:path], json[:exec], json[:args])
+        def self.createFromJSON(id, json)
+            return Miner.new(id, json[:name], json[:path], json[:exec], json[:args])
         end
     end
     
     # Parses a miner and adds it to the miner hash
-    def self.loadMiner(json)
-        miner = Miner.createFromJSON(json)
+    def self.loadMiner(id, json)
+        miner = Miner.createFromJSON(id, json)
         
         # Add to hash
         if (@@miners[miner.id] != nil)
@@ -54,7 +54,7 @@ module Miners
     
     # Loads all miners from config
     def self.loadMiners()
-        Config.miners.each {|json| loadMiner(json)}
+        Config.miners.each {|id, json| loadMiner(id.to_s, json)}
     end
     
     def self.miners()

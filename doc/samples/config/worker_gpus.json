@@ -1,0 +1,45 @@
+{
+  "config_version": 5,
+  "workers": {
+    "gpus_nvidia": {
+      "name": "NVIDIA GPUs",
+      "algorithms": {
+        "equihash": {
+          "miners": {
+            "ccminer": {
+              "rate": 250
+            }
+          }
+        },
+        "cryptonight": {
+          "miners": {
+            "ccminer": {
+              "rate": 200
+            },
+            "xmr-stak": {
+              "rate": 350
+            }
+          }
+        }
+      }
+    },
+    "gpus_amd": {
+      "name": "AMD GPUs",
+      "algorithms": {
+        "equihash": {
+          "miners": {
+            "ccminer": {
+              "rate": 180
+            }
+          }
+        },"ethash": {
+          "miners": {
+            "ethminer": {
+              "rate": 500
+            }
+          }
+        }
+      }
+    }
+  }
+}

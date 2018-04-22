@@ -31,76 +31,88 @@ class Executor
             # TODO forward to Worker logger
             @minerLogger = Log.createLogger("#{@workerLogger.progname}/job.miner.id", toConsole: Config.settings[:show_miner_output])
        
-            # Create subprocess (INSECURE - uses shell, so don't pass any external data in.
+            # Create subprocess (INSECURE - uses shell, so don't pass any external data in).
             cmd = "#{@job.miner.exec} #{@job.miner.args(job)}"
             @workerLogger.debug("Command: #{cmd}")
 
-            # Linux and windows miners behave differently and need different process code.
-            if (Gem.win_platform?)
-                @workerLogger.debug("Using pipes for IO")
-                
-                require 'open3'
-                
-                # This method doesn't work for programs that use TTYs
-                # Start the process
-                stdin, stdout, thr = Open3.popen2e(cmd, :chdir => @job.miner.path)
-                @pid = thr.pid # pid of the started process.
-                @running = true
-                
-                # Close write pipe
-                stdin.close()
-                    
-                # Read from new thread
-                Thread.new {
-                    # Read until pipe closes
-                    until (rawLine = stdout.gets).nil? do
-                        line = rawLine.chomp() # Get rid of trailing newline
-                        @minerLogger.info(line)
-                    end
-                    @workerLogger.debug("Read thread ended")
-                }
+            # Make sure working dir exists
+            if (Dir.exist? @job.miner.path)
+                begin
+                    # Linux and windows miners behave differently and need different process code.
+                    if (Gem.win_platform?)
+                        @workerLogger.debug("Using pipes for IO")
+                        
+                        require 'open3'
+                        
+                        # This method doesn't work for programs that use TTYs
+                        # Start the process
+                        #BUG: if path does not exist then ruby will exit with no error
+                        stdin, stdout, thr = Open3.popen2e(cmd, :chdir => @job.miner.path)
+                        @pid = thr.pid # pid of the started process.
+                        @running = true
+                        
+                        # Close write pipe
+                        stdin.close()
+                            
+                        # Read from new thread
+                        Thread.new {
+                            # Read until pipe closes
+                            until (rawLine = stdout.gets).nil? do
+                                line = rawLine.chomp() # Get rid of trailing newline
+                                @minerLogger.info(line)
+                            end
+                            @workerLogger.debug("Read thread ended")
+                        }
 
-                Thread.new {
-                    # Join is necessary or else the pipes will just swallow all data.
-                    # But, we can put the join in its own thread and not block up the main program
-                    thr.join
-                    
-                    # join returns when process finishes
-                    @running = false
-                    @workerLogger.info("Process terminated.")
-                }
-                
-                @workerLogger.debug("Finished starting")
-            # For anything other than windows, use a PTY
+                        Thread.new {
+                            # Join is necessary or else the pipes will just swallow all data.
+                            # But, we can put the join in its own thread and not block up the main program
+                            thr.join
+                            
+                            # join returns when process finishes
+                            @running = false
+                            @workerLogger.info("Process terminated.")
+                        }
+                        
+                        @workerLogger.debug("Finished starting")
+                    # For anything other than windows, use a PTY
+                    else
+                        @workerLogger.debug("Using PTY for IO")
+                        # Have to use PTYs because *SOME* miners don't know how to talk to a pipe
+                        require 'pty'
+
+                        # Adpated from https://ruby-doc.org/stdlib-2.2.3/libdoc/pty/rdoc/PTY.html
+                        master, slave = PTY.open
+                        @pid = spawn(cmd, :chdir => @job.miner.path, :in=>slave, :out=>slave, :err=>slave)
+                        slave.close    # Don't need the slave
+                        
+                        @running = true
+
+                        # Thread to read from process
+                        Thread.new {
+                            begin
+                                # Read until pipe closes
+                                until (rawLine = master.gets()).nil? do
+                                    line = rawLine.chomp() # Get rid of trailing newline
+                                    @minerLogger.info(line)
+                                end
+                            rescue e
+                                @workerLogger.warn("Exception in read thread: #{e}")
+                            ensure
+                                @running = false
+                                master.close()
+                                @workerLogger.info("Process ended.")
+                            end
+                        }
+
+                    end
+                rescue e
+                    @workerLogger.error "Exception starting process."
+                    @workerLogger.error e.message()
+                    @workerLogger.error e.backtrace.join("\n\t")
+                end
             else
-                @workerLogger.debug("Using PTY for IO")
-                # Have to use PTYs because *SOME* miners don't know how to talk to a pipe
-                require 'pty'
-
-                # Adpated from https://ruby-doc.org/stdlib-2.2.3/libdoc/pty/rdoc/PTY.html
-                master, slave = PTY.open
-                @pid = spawn(cmd, :chdir => @job.miner.path, :in=>slave, :out=>slave, :err=>slave)
-                slave.close    # Don't need the slave
-                
-                @running = true
-
-                # Thread to read from process
-                Thread.new {
-                    begin
-                        # Read until pipe closes
-                        until (rawLine = master.gets()).nil? do
-                            line = rawLine.chomp() # Get rid of trailing newline
-                            @minerLogger.info(line)
-                        end
-                    rescue e
-                        @workerLogger.warn("Exception in read thread: #{e}")
-                    ensure
-                        @running = false
-                        master.close()
-                        @workerLogger.info("Process ended.")
-                    end
-                }
-
+                @workerLogger.error "Unable to start, working directory does not exist."
             end
         end
     end
