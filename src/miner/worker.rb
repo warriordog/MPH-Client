@@ -246,7 +246,6 @@ module Wkr
             }
             
             # Create worker
-            #return Worker.new(json[:name], id, json[:profit_field], algs)
             return Worker.new(json[:name], id, "profit", algs)
         end
     end

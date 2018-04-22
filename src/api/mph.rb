@@ -53,16 +53,13 @@ module MPH
     def self.generateURI(coin: nil, page: "api", args: {})
         # Generate base URL
         if (coin != nil)
-            #base = "https://#{URI.escape(coin)}.miningpoolhub.com/index.php?page=#{URI.escape(page)}"
             base = "https://#{URI.encode_www_form_component(coin)}.miningpoolhub.com/index.php?page=#{URI.encode_www_form_component(page)}"
         else
-            #base = "https://miningpoolhub.com/index.php?page=#{URI.escape(page)}"
             base = "https://miningpoolhub.com/index.php?page=#{URI.encode_www_form_component(page)}"
         end
         
         # Add API arguments
         url = args.inject(base) {|u, arg|
-            #u + "&" + URI.escape(arg[0]) + "=" + URI.escape(arg[1])
             u + "&" + URI.encode_www_form_component(arg[0]) + "=" + URI.encode_www_form_component(arg[1])
         }
         
