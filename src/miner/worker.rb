@@ -110,10 +110,11 @@ module Wkr
     end
 
     class Worker
-        def initialize(name, id, profitField, algorithms)
+        def initialize(name, id, profitField, algorithms, percentProfitThreshold)
             @name = name
             @id = id
             @profitField = profitField
+            @percentProfitThreshold = percentProfitThreshold
             
             # Map algorithm ID -> workerAlgorithm@algos[Coins.Coins[statCoin[:coin_name]]
             @algos = algorithms
@@ -197,29 +198,37 @@ module Wkr
                 
                 # Lokup matching coin
                 coin = Coins.coins[coinName]
-                # Get WorkerAlgorithm for this coin
-                wkrAlgo = @algos[coin.algorithm.id]
-                # Get best miner for this coin
-                miner = wkrAlgo.wkrMiners[0].miner
                 
-                # Create host for this task
-                host = Host.new(statCoin[:direct_mining_host], statCoin[:port])
-                
-                # Start mining only if the task parameters have changed
-                if (@currentJob == nil || !@currentJob.same?(wkrAlgo.algorithm, coin, miner, host))
-                    # start job
-                    @logger.info("Switching to #{coinName}")
+                # Make sure profit increase exceeds threshold
+                currentStatCoin = statCoins.find{|statCoin| (@currentJob != nil) && (statCoin[:coin_name] == @currentJob.coin.id)}
+                if (currentStatCoin == nil || (statCoin[:CalculatedProfit] >= (currentStatCoin[:CalculatedProfit]) * @percentProfitThreshold))
                     
-                    # Stop current job, if there is one
-                    if (@currentJob != nil)
-                        @currentJob.stop()
+                    # Get WorkerAlgorithm for this coin
+                    wkrAlgo = @algos[coin.algorithm.id]
+                    # Get best miner for this coin
+                    miner = wkrAlgo.wkrMiners[0].miner
+                    
+                    # Create host for this task
+                    host = Host.new(statCoin[:direct_mining_host], statCoin[:port])
+                    
+                    # Start mining only if the task parameters have changed
+                    if (@currentJob == nil || !@currentJob.same?(wkrAlgo.algorithm, coin, miner, host))
+                        # start job
+                        @logger.info("Switching to #{coinName}")
+                        
+                        # Stop current job, if there is one
+                        if (@currentJob != nil)
+                            @currentJob.stop()
+                        end
+                        
+                        # Set up new job
+                        @currentJob = WorkerJob.new(self, wkrAlgo.algorithm, coin, miner, host)
+                        @currentJob.start()
+                    else
+                        @logger.debug("Not changing coins")
                     end
-                    
-                    # Set up new job
-                    @currentJob = WorkerJob.new(self, wkrAlgo.algorithm, coin, miner, host)
-                    @currentJob.start()
                 else
-                    @logger.debug("Not changing coins")
+                    @logger.debug {"Not switching from #{@currentJob.coin.id} to #{coin.id} (not enough increase)."}
                 end
             else
                 @logger.error("No valid coins for worker #{@name}, not switching!")
@@ -246,7 +255,7 @@ module Wkr
             }
             
             # Create worker
-            return Worker.new(json[:name], id, "profit", algs)
+            return Worker.new(json[:name], id, "profit", algs, json[:percentProfitThreshold])
         end
     end
 

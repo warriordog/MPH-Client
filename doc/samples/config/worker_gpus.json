@@ -1,8 +1,9 @@
 {
-  "config_version": 5,
+  "config_version": 6,
   "workers": {
     "gpus_nvidia": {
       "name": "NVIDIA GPUs",
+      "percentProfitThreshold": "1.01",
       "algorithms": {
         "equihash": {
           "miners": {
@@ -25,6 +26,7 @@
     },
     "gpus_amd": {
       "name": "AMD GPUs",
+      "percentProfitThreshold": "1.05",
       "algorithms": {
         "equihash": {
           "miners": {
