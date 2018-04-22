@@ -54,7 +54,7 @@ module MPHClient
     
     def self.start()
         # Print version
-        @@rootLog.info("MPH-Client v0.1.0 (development)")
+        @@rootLog.info("MPH-Client v0.1.1 (development)")
 
         # Load config
         if (ARGV.length > 0)
