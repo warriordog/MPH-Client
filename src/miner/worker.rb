@@ -20,9 +20,7 @@ module Wkr
     class WorkerMiner
         def initialize(miner, rate)
             @miner = miner
-            #TODO
-            #@rate = rate.to_i
-            @rate = rate
+            @rate = rate.to_i
         end
         
         attr_reader :miner, :rate
@@ -44,7 +42,7 @@ module Wkr
             @algorithm = algorithm
             
             # Sort by descending rate
-            @wkrMiners = wkrMiners.sort() {|m1, m2| m2.rate.to_i <=> m1.rate.to_i}
+            @wkrMiners = wkrMiners.sort() {|m1, m2| m2.rate <=> m1.rate}
         end
         
         attr_reader :algorithm, :wkrMiners
