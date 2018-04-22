@@ -1,10 +1,10 @@
 {
-  "config_version": 5,
+  "config_version": 6,
   "settings": {
     "api_key": "",
     "account": "account",
-    "switch_interval": 60,
-    "network_timeout": 60,
+    "switch_interval": 900,
+    "reconnect_interval": 60,
     "log_to_file": true,
     "log_level": "DEBUG",
     "show_miner_output": false

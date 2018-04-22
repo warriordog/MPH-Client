@@ -31,13 +31,18 @@ module MPHClient
                 if (stats != nil)
                     # switch (or not)
                     workers.each {|w| w.switchAlgo(stats)}
-                else
-                    logger.error("Unable to get stats, stopping miners.")
-                    workers.each {|w| w.stopMining()}
-                end
                 
-                # Only change every n seconds
-                sleep(Config.settings[:switch_interval])
+                    # Sleep until next switch interval
+                    sleep Config.settings[:switch_interval]
+                else
+                    # Time until attempt to reconnect
+                    delay = Config.settings[:reconnect_interval]
+                    
+                    logger.error("Unable to get stats, stopping miners.  Trying again in #{delay} seconds.")
+                    workers.each {|w| w.stopMining()}
+                    
+                    sleep delay
+                end
             end
         }
         
