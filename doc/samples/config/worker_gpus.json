@@ -22,7 +22,17 @@
             }
           }
         }
-      }
+      },
+      "events": [
+        {
+          "trigger": "worker_startup",
+          "action": "log_startup"
+        },
+        {
+          "trigger": "worker_shutdown",
+          "action": "log_shutdown"
+        }
+      ]
     },
     "gpus_amd": {
       "name": "AMD GPUs",
@@ -47,28 +57,12 @@
       },
       "events": [
         {
-          "trigger": "startup",
-          "actions": [
-            {
-              "id": "log",
-              "args": {
-                "severity": "INFO",
-                "message": "AMD miner started up"
-              }
-            }
-          ]
+          "trigger": "worker_startup",
+          "action": "log_startup"
         },
         {
-          "trigger": "shutdown",
-          "actions": [
-            {
-              "id": "log",
-              "args": {
-                "severity": "INFO",
-                "message": "AMD miner shut down"
-              }
-            }
-          ]
+          "trigger": "worker_shutdown",
+          "action": "log_shutdown"
         }
       ]
     }

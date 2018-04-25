@@ -10,6 +10,7 @@ require 'miner/worker'
 require 'miner/coins'
 require 'miner/miners'
 require 'api/mph'
+require 'miner/event'
 
 module MPHClient
     # Global logger (default creation is temporary until config is loaded)
@@ -48,14 +49,14 @@ module MPHClient
                 end
             end
         }
-        
-		# Shut down workers
-		workers.each {|worker| worker.shutdown()}
 		
         # add new stuff here
         
         # Wait for all threads to end
         timerThread.join()
+        
+		# Shut down workers
+		workers.each {|worker| worker.shutdown()}
     end
     
     def self.start()
@@ -81,6 +82,9 @@ module MPHClient
                         # Load miners
                         Miners.loadMiners()
                     
+						# Load event actions and triggers
+						Events.loadActionsAndEvents()
+					
                         # Load workers
                         workers = Wkr.loadWorkers()
                         

@@ -1,0 +1,17 @@
+{
+  "config_version": 0,
+  "triggers": {
+    "worker_startup": {
+      "trigger_id": "startup",
+      "filters": {
+      
+      }
+    },
+    "worker_shutdown": {
+      "trigger_id": "shutdown",
+      "filters": {
+        
+      }
+    }
+  }
+}

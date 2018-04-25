@@ -291,16 +291,24 @@ module Wkr
 		
 		# Prepares this worker to start mining
 		def startup()
+			@logger.debug {"Starting up worker."}
+			
+			# Apply triggers
+			@events.each {|event| event.trigger.addToWorker(self, event)}
+			
 			# Call startup listeners
-			@logger.debug {"Calling startup listeners for '#{@id}'"}
 			@listeners[:startup].each {|id, block| block.call(self)}
 		end
 		
 		# Prepares this worker to stop mining
 		def shutdown()
+			@logger.debug {"Shutting down worker."}
+			
 			# Call shutdown listeners
-			@logger.debug {"Calling shutdown listeners for '#{@id}'"}
 			@listeners[:shutdown].each {|id, block| block.call(self)}
+			
+			# Detach triggers
+			@events.each {|event| event.trigger.removeFromWorker(self)}
 		end
 		
         # Load from json
@@ -318,17 +326,12 @@ module Wkr
 			events = []
 			if (json.include? :events)
 				json[:events].each {|eventJson|
-					events << Event.createFromJSON(eventJson)
+					events << Events::Event.createFromJSON(eventJson)
 				}
 			end
 			
             # Create worker
             worker = Worker.new(json[:name], id, "profit", algs, json[:percentProfitThreshold], events)
-			
-			# Register events
-			events.each {|event|
-				event.addToWorker(worker)
-			}
 			
 			return worker;
         end

@@ -15,7 +15,17 @@
             }
           }
         }
-      }
+      },
+      "events": [
+        {
+          "trigger": "worker_startup",
+          "action": "log_startup"
+        },
+        {
+          "trigger": "worker_shutdown",
+          "action": "log_shutdown"
+        }
+      ]
     }
   }
 }

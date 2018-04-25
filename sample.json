@@ -11,6 +11,8 @@
   },
   "algorithms": "doc/samples/config/algorithms.json",
   "miners": "doc/samples/config/miners.json",
+  "triggers": "doc/samples/config/event_triggers.json",
+  "actions": "doc/samples/config/event_actions.json",
   "workers": [
     "doc/samples/config/worker_gpus.json",
     "doc/samples/config/worker_cpus.json"

@@ -1,0 +1,19 @@
+{
+  "config_version": 0,
+  "actions": {
+    "log_startup": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Worker $(WORKER_ID) starting"
+      }
+    },
+    "log_shutdown": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Worker $(WORKER_ID) shutting down"
+      }
+    }
+  }
+}

@@ -2,212 +2,251 @@
 # Worker event code
 #-------------------
 
-# An action that can be taken
-class Action
-	def initialize(actionId, args)
-		@actionId = actionId
-		@args = args
-	end
+# Events module
+module Events
+    # Module logger
+    @@logger = Log.createLogger("Events", toFile: true, toConsole: true)
+
+	# ID -> instance maps
+	@@triggers = {}
+	@@actions = {}
 	
-	attr_reader :actionId, :args
-	
-	def execute(worker)
-		# Do nothing
-		
-		@worker.logger.debug "Empty action '#{actionId}' called from '#{worker.id}'"
-	end
-	
-	def self.createFromJSON(json)
-		if (json.include? :id)
-			# Action id
-			action = json[:id].downcase
-			
-			if (json.include? :args)
-				args = json[:args]
-			else
-				# Some actions may have optional args
-				args = {}
-			end
-			
-			case action
-			when "log"
-				# Log action
-				return ActionLog.new(action, args)
-			else
-				Wkr.logger.warn {"Unkown action id '#{action}'"}
-				
-				# Return empty action
-				return Action.new(action, args)
-				
-			end
-		else
-			Wkr.logger.error {"Missing action ID for action '#{json[:id]}'"}
+	# An action that can be taken
+	class Action
+		def initialize(id, actionId, args)
+			@id = id
+			@actionId = actionId
+			@args = args
 		end
 		
-		# Return empty action
-		return Action.new(nil, {})
-	end
-end
-
-# Action for 
-class ActionLog < Action
-	def initialize(actionId, args)
-		super(actionId, args)
+		attr_reader :id, :actionId, :args
 		
-		if (args.include?(:severity) && args.include?(:message))
-			# logger severity (converted to upper case)
-			severity = Logger::Severity.const_get(args[:severity].upcase)
-			if (severity != nil)
-				# logger message
-				message = args[:message]
+		def execute(worker)
+			# Do nothing
+			
+			Events.logger.debug "Empty action '#{actionId}' called from '#{worker.id}'"
+		end
+		
+		def self.createFromJSON(id, json)
+			if (json.include? :action_id)
+				# Action id
+				action = json[:action_id].downcase
 				
-				# setup lambda to log
-				@logFunc = lambda {|worker| worker.logger.log(severity, message)}
+				# Action args
+				if (json.include? :args)
+					args = json[:args]
+				else
+					# Some actions may have optional args
+					args = {}
+				end
+				
+				# Create appropriate subclass
+				case action
+				when "log"
+					# Log action
+					return ActionLog.new(id, action, args)
+				else
+					Events.logger.warn {"Unkown action id '#{action}' for action '#{id}'.  It will not be created."}
+					
+				end
+			else
+				Events.logger.error {"Missing action ID for action '#{json[:id]}'.  It will not be created."}
+			end
+			
+			return nil
+		end
+	end
+
+	# Action for 
+	class ActionLog < Action
+		def initialize(id, actionId, args)
+			super(id, actionId, args)
+			
+			# Make sure args are valid
+			if (args.include?(:severity) && args.include?(:message))
+			
+				# logger severity (converted to upper case)
+				severity = Logger::Severity.const_get(args[:severity].upcase)
+				if (severity != nil)
+				
+					# logger message
+					message = args[:message]
+					
+					# setup lambda to log
+					@logFunc = lambda {|worker| worker.logger.log(severity, message)}
+				else
+					# empty lambda
+					@logFunc = lambda {}
+					Events.logger.warn "Invalid logger severity: #{args[:severity]}"
+				end
 			else
 				# empty lambda
 				@logFunc = lambda {}
-				Wkr.logger.warn "Invalid logger severity: #{args[:severity]}"
+				Events.logger.warn "Event action '#{actionId}' is missing required argument(s) 'severity', 'message' and will be disabled."
 			end
-		else
-			# empty lambda
-			@logFunc = lambda {}
-			Wkr.logger.warn "Event action '#{actionId}' is missing required argument(s) 'severity', 'message' and will be disabled."
+		end
+		
+		# Override
+		def execute(worker)
+			@logFunc.call worker
 		end
 	end
-	
-	# Override
-	def execute(worker)
-		@logFunc.call worker
-	end
-end
 
-# An event trigger
-class Trigger
-	def initialize(event, triggerId)
-		@triggerId = triggerId
-		@event = event
-	end
-	
-	attr_reader :triggerId, :event
-
-	# Adds hooks/listeners/etc to worker
-	#   Event is event that this listner is linked to
-	def addToWorker(worker)
-		worker.logger.debug {"Not registering unknown trigger '#{@triggerId}' for '#{worker.id}'."}
-	end
-	
-	# Removes hooks/listeners/etc and shuts down
-	def removeFromWorker(worker)
-		worker.logger.debug {"Not deregistering unknown trigger '#{@triggerId}' for '#{worker.id}'."}
-	end
-	
-	def self.createFromID(event, triggerId)
-		triggerId = triggerId.downcase
-	
-		case triggerId
-		when "startup"
-			return StartupTrigger.new(event, triggerId)
-		when "shutdown"
-			return ShutdownTrigger.new(event, triggerId)
-		else
-			Wkr.logger.warn "Unkown trigger id '#{triggerId}'."
-			return Trigger.new(event, triggerId)
+	# An event trigger
+	class Trigger
+		def initialize(id, triggerId, filters)
+			@id = id
+			@triggerId = triggerId
+			@filters = filters
+		end
+		
+		attr_reader :id, :triggerId, :filters
+		
+		def self.createFromJSON(id, json)
+			if (json.include? :trigger_id)
+				triggerId = json[:trigger_id].downcase
+			
+				case triggerId
+				when "startup"
+					return StartupTrigger.new(id, triggerId, json[:filters])
+				when "shutdown"
+					return ShutdownTrigger.new(id, triggerId, json[:filters])
+				else
+					Events.logger.warn "Unkown trigger id '#{triggerId}' for trigger '#{id}'.  It will not be created."
+				end
+			else
+				Events.logger.warn "No trigger id for trigger '#{id}'.  It will not be created."
+			end
+			
+			return nil
 		end
 	end
-end
 
-# Trigger that activates when worker starts
-class StartupTrigger < Trigger
-	def initialize(event, triggerId)
-		super(event, triggerId)
-	end
-	
-	# Override
-	def addToWorker(worker)
-		worker.addListener(:startup, self) { |wkr|
-			worker.logger.debug {"Activating startup trigger on '#{worker.id}'"}
-			@event.trigger()
-		}
-	end
-	
-	# Override
-	def removeFromWorker(worker)
-		worker.removeListener(self)
-	end
-end
-
-# Trigger that activates when worker stops
-class ShutdownTrigger < Trigger
-	def initialize(event, triggerId)
-		super(event, triggerId)
-	end
-	
-	# Override
-	def addToWorker(worker)
-		worker.addListener(:shutdown, self) { |wkr|
-			worker.logger.debug {"Activating shutdown trigger on '#{worker.id}'"}
-			@event.trigger()
-		}
-	end
-	
-	# Override
-	def removeFromWorker(worker)
-		worker.removeListener(self)
-	end
-end
-
-# Parent event class
-class Event
-	def initialize()
-		@trigger = nil
-		@actions = []
-		@workers = []
-	end
-	
-	attr_reader :workers, :actions
-	attr_accessor :trigger
-	
-	# Activates the actions in this event
-	def trigger()
-		@workers.each {|worker|
-			@actions.each {|action| 
-				action.execute worker
+	# Trigger that activates when worker starts
+	class StartupTrigger < Trigger
+		def initialize(id, triggerId, filters)
+			super(id, triggerId, filters)
+		end
+		
+		# Override
+		def addToWorker(worker, event)
+			worker.addListener(:startup, self) { |wkr|
+				Events.logger.debug {"Activating startup trigger on '#{worker.id}'"}
+				event.fire(worker)
 			}
-		}
-	end
-	
-	# Activates triggers
-	def addToWorker(worker)
-		@workers << worker
-		@trigger.addToWorker(worker)
-	end
-	
-	# Deactivates triggers
-	def removeFromWorker(worker)
-		@workers.remove worker
-		@trigger.removeFromWorker(worker)
-	end
-	
-	def self.createFromJSON(json)
-		# Create event
-		event = Event.new()
+		end
 		
-		# Add actions
-		if ((json.include? :actions) && (!json[:actions].empty?))
-			json[:actions].each { |actionJson|
-				event.actions << Action.createFromJSON(actionJson)
+		# Override
+		def removeFromWorker(worker)
+			worker.removeListener(self)
+		end
+	end
+
+	# Trigger that activates when worker stops
+	class ShutdownTrigger < Trigger
+		def initialize(id, triggerId, filters)
+			super(id, triggerId, filters)
+		end
+		
+		# Override
+		def addToWorker(worker, event)
+			worker.addListener(:shutdown, self) { |wkr|
+				Events.logger.debug {"Activating shutdown trigger on '#{worker.id}'"}
+				event.fire(worker)
 			}
-		else
-			Wkr.logger.warn {"No actions for event '#{json}'"}
 		end
 		
-		# Create trigger
-		if (json.include? :trigger)
-			event.trigger = Trigger.createFromID(event, json[:trigger])
-		else
-			Wkr.logger.warn {"No triggers for event in '#{json}'"}
+		# Override
+		def removeFromWorker(worker)
+			worker.removeListener(self)
+		end
+	end
+
+	# Parent event class
+	class Event
+		def initialize(trigger, action)
+			@trigger = trigger
+			@action = action
 		end
 		
-		return event
+		attr_reader :action, :trigger
+		
+		# Activates the actions in this event
+		def fire(worker)
+			action.execute worker
+		end
+		
+		def self.createFromJSON(json)
+			
+			# Lookup trigger
+			if (json.include? :trigger)
+				trigger = Events.getTrigger(json[:trigger]) #.createFromID(event, json[:trigger])
+				if (trigger != nil)
+					
+					# Lookup action
+					if (json.include? :action)
+						action = Events.getAction(json[:action])
+						if (action != nil)
+					
+							# Create event
+							return Event.new(trigger, action)
+						else
+							Events.logger.error "Unkown action '#{json[:action]}' in event '#{json}'"
+						end
+					else
+						Events.logger.error "No action for event '#{json}'."
+					end
+				else
+					Events.logger.error "Unkown trigger '#{json[:trigger]}' in event '#{json}'"
+				end
+			else
+				Events.logger.error "No trigger for event in '#{json}', it will not be added."
+			end
+			
+			# Don't try to create invalid events
+			return nil
+		end
+	end
+	
+	# Gets a trigger instance by ID
+	def self.getTrigger(id)
+		return @@triggers[id.to_sym]
+	end
+	
+	# Gets an action instance by ID
+	def self.getAction(id)
+		return @@actions[id.to_sym]
+	end
+	
+	# Gets the events logger
+    def self.logger()
+        return @@logger
+    end
+	
+	def self.loadTrigger(id, json)
+		trigger = Trigger.createFromJSON(id, json)
+		if (trigger != nil)
+			@@triggers[id] = trigger
+		end
+	end
+	
+	def self.loadTriggers()
+		Config.triggers.each {|id, json| self.loadTrigger(id, json)}
+	end
+	
+	def self.loadAction(id, json)
+		action = Action.createFromJSON(id, json)
+		if (action != nil)
+			@@actions[id] = action
+		end
+	end
+	
+	def self.loadActions()
+		Config.actions.each {|id, json| self.loadAction(id, json)}
+	end
+	
+	def self.loadActionsAndEvents()
+		self.loadTriggers()
+		self.loadActions()
 	end
 end
