@@ -21,7 +21,7 @@ module Events
 		
 		attr_reader :id, :actionId, :args
 		
-		def execute(worker)
+		def execute(worker, vars)
 			# Do nothing
 			
 			Events.logger.debug "Empty action '#{actionId}' called from '#{worker.id}'"
@@ -73,7 +73,7 @@ module Events
 					message = args[:message]
 					
 					# setup lambda to log
-					@logFunc = lambda {|worker| worker.logger.log(severity, message)}
+					@logFunc = lambda {|worker, vars| worker.logger.log(severity, message)}
 				else
 					# empty lambda
 					@logFunc = lambda {}
@@ -87,8 +87,8 @@ module Events
 		end
 		
 		# Override
-		def execute(worker)
-			@logFunc.call worker
+		def execute(worker, vars)
+			@logFunc.call(worker, vars)
 		end
 	end
 
@@ -111,6 +111,8 @@ module Events
 					return StartupTrigger.new(id, triggerId, json[:filters])
 				when "shutdown"
 					return ShutdownTrigger.new(id, triggerId, json[:filters])
+				when "switch_coin"
+					return CoinSwitchTrigger.new(id, triggerId, json[:filters])
 				else
 					Events.logger.warn "Unkown trigger id '#{triggerId}' for trigger '#{id}'.  It will not be created."
 				end
@@ -130,9 +132,9 @@ module Events
 		
 		# Override
 		def addToWorker(worker, event)
-			worker.addListener(:startup, self) { |wkr|
+			worker.addListener(:startup, self) { |wkr, vars|
 				Events.logger.debug {"Activating startup trigger on '#{worker.id}'"}
-				event.fire(worker)
+				event.fire(worker, vars)
 			}
 		end
 		
@@ -150,9 +152,9 @@ module Events
 		
 		# Override
 		def addToWorker(worker, event)
-			worker.addListener(:shutdown, self) { |wkr|
+			worker.addListener(:shutdown, self) { |wkr, vars|
 				Events.logger.debug {"Activating shutdown trigger on '#{worker.id}'"}
-				event.fire(worker)
+				event.fire(worker, vars)
 			}
 		end
 		
@@ -162,6 +164,26 @@ module Events
 		end
 	end
 
+	# Trigger that activates when worker switches coins
+	class CoinSwitchTrigger < Trigger
+		def initialize(id, triggerId, filters)
+			super(id, triggerId, filters)
+		end
+		
+		# Override
+		def addToWorker(worker, event)
+			worker.addListener(:switch_coin, self) { |wkr, vars|
+				Events.logger.debug {"Activating coin switch trigger on '#{worker.id}'"}
+				event.fire(worker, vars)
+			}
+		end
+		
+		# Override
+		def removeFromWorker(worker)
+			worker.removeListener(self)
+		end
+	end
+	
 	# Parent event class
 	class Event
 		def initialize(trigger, action)
@@ -172,15 +194,15 @@ module Events
 		attr_reader :action, :trigger
 		
 		# Activates the actions in this event
-		def fire(worker)
-			action.execute worker
+		def fire(worker, vars)
+			action.execute(worker, vars)
 		end
 		
 		def self.createFromJSON(json)
 			
 			# Lookup trigger
 			if (json.include? :trigger)
-				trigger = Events.getTrigger(json[:trigger]) #.createFromID(event, json[:trigger])
+				trigger = Events.getTrigger(json[:trigger])
 				if (trigger != nil)
 					
 					# Lookup action

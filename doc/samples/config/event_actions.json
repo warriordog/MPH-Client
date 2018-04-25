@@ -14,6 +14,20 @@
         "severity": "INFO",
         "message": "Worker $(WORKER_ID) shutting down"
       }
+    },
+    "log_switch": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Worker $(WORKER_ID) is switching to $(NEW_COIN)."
+      }
+    },
+    "log_bad_switch": {
+      "action_id": "log",
+      "args": {
+        "severity": "WARN",
+        "message": "Worker $(WORKER_ID) is incorrectly switching from $(OLD_COIN) to $(NEW_COIN)."
+      }
     }
   }
 }

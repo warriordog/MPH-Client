@@ -255,11 +255,17 @@ module Wkr
                         # Stop current job, if there is one
                         if (@currentJob != nil)
                             @currentJob.stop()
+							lastCoin = @currentJob.coin
+						else
+							lastCoin = nil
                         end
-                        
+						
                         # Set up new job
                         @currentJob = WorkerJob.new(self, wkrAlgo.algorithm, coin, miner, host)
                         @currentJob.start()
+						
+						# Fire coin switch event
+						fireEvent(:switch_coin, {'OLD_COIN' => lastCoin&.id, 'NEW_COIN' => coin.id})
                     else
                         @logger.debug("Not changing coins")
                     end
@@ -297,7 +303,8 @@ module Wkr
 			@events.each {|event| event.trigger.addToWorker(self, event)}
 			
 			# Call startup listeners
-			@listeners[:startup].each {|id, block| block.call(self)}
+			#@listeners[:startup].each {|id, block| block.call(self)}
+			fireEvent(:startup, {})
 		end
 		
 		# Prepares this worker to stop mining
@@ -305,10 +312,18 @@ module Wkr
 			@logger.debug {"Shutting down worker."}
 			
 			# Call shutdown listeners
-			@listeners[:shutdown].each {|id, block| block.call(self)}
+			#@listeners[:shutdown].each {|id, block| block.call(self)}
+			fireEvent(:shutdown, {})
 			
 			# Detach triggers
 			@events.each {|event| event.trigger.removeFromWorker(self)}
+		end
+		
+		# Fires an event with the specified variables
+		def fireEvent(eventId, vars)
+			@listeners[eventId].each {|id, block|
+				block.call(self, vars)
+			}
 		end
 		
         # Load from json
@@ -326,7 +341,10 @@ module Wkr
 			events = []
 			if (json.include? :events)
 				json[:events].each {|eventJson|
-					events << Events::Event.createFromJSON(eventJson)
+					event = Events::Event.createFromJSON(eventJson)
+					if (event != nil)
+						events << event
+					end
 				}
 			end
 			

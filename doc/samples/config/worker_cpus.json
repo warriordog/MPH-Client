@@ -24,6 +24,10 @@
         {
           "trigger": "worker_shutdown",
           "action": "log_shutdown"
+        },
+        {
+          "trigger": "coin_switch",
+          "action": "log_bad_switch"
         }
       ]
     }

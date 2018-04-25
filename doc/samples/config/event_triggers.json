@@ -12,6 +12,12 @@
       "filters": {
         
       }
+    },
+    "coin_switch": {
+      "trigger_id": "switch_coin",
+      "filters": {
+        
+      }
     }
   }
 }
