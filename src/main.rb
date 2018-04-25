@@ -18,6 +18,9 @@ module MPHClient
     def self.runMainLoop(workers)
         running = true
 
+		# Startup workers
+		workers.each {|worker| worker.startup()}
+		
         # setup coin change timer
         timerThread = Thread.new {
             logger = Log.createLogger("SwitchTimer")
@@ -46,6 +49,9 @@ module MPHClient
             end
         }
         
+		# Shut down workers
+		workers.each {|worker| worker.shutdown()}
+		
         # add new stuff here
         
         # Wait for all threads to end

@@ -6,7 +6,8 @@ require 'config'
 require 'util/log'
 require 'miner/executor'
 require 'miner/coins'
-require 'miner/miners'
+require 'miner/miners' 
+require 'miner/event'
 
 module Wkr
 
@@ -15,7 +16,7 @@ module Wkr
 
     # Hash of ids -> workers
     @@Workers = {}
-
+	
     # A miner supported by a specific worker
     class WorkerMiner
         def initialize(miner, rate)
@@ -138,7 +139,7 @@ module Wkr
     end
 
     class Worker
-        def initialize(name, id, profitField, algorithms, percentProfitThreshold)
+        def initialize(name, id, profitField, algorithms, percentProfitThreshold, events)
             @name = name
             @id = id
             @profitField = profitField
@@ -148,11 +149,16 @@ module Wkr
             @algos = algorithms
             @logger = Log.createLogger("worker/" + @id)
             
+			@events = events
+			
             @currentJob = nil
+			
+			# map of symbol id -> map of (id object -> proc)
+			@listeners = Hash.new { |h, k| h[k] = {} } # hash default values are unique hashes
         end
         
         # Add getters
-        attr_reader :name, :id, :profitField, :algos, :logger, :currentJob
+        attr_reader :name, :id, :profitField, :algos, :logger, :currentJob, :events
         
         # Find the profit for a specified coin
         def calcProfit(statCoin)
@@ -230,7 +236,7 @@ module Wkr
                 coin = Coins.coins[coinName]
                 
                 # Make sure profit increase exceeds threshold
-                currentStatCoin = statCoins.find{|statCoin| (@currentJob != nil) && (statCoin[:coin_name] == @currentJob.coin.id)}
+                currentStatCoin = statCoins.find{|sCoin| (@currentJob != nil) && (sCoin[:coin_name] == @currentJob.coin.id)}
                 if (currentStatCoin == nil || (statCoin[:CalculatedProfit] >= (currentStatCoin[:CalculatedProfit]) * @percentProfitThreshold))
                     
                     # Get WorkerAlgorithm for this coin
@@ -273,6 +279,30 @@ module Wkr
             end
         end
         
+		# Add a listener
+		def addListener(signal, id, &block)
+			@listeners[signal][id] = block
+		end
+		
+		# Remove a listener
+		def removeListener(id)
+			@listeners.delete_if {|sigKey, sigVal| sigVal.find {|listenerId, listener| listenerId == id}}
+		end
+		
+		# Prepares this worker to start mining
+		def startup()
+			# Call startup listeners
+			@logger.debug {"Calling startup listeners for '#{@id}'"}
+			@listeners[:startup].each {|id, block| block.call(self)}
+		end
+		
+		# Prepares this worker to stop mining
+		def shutdown()
+			# Call shutdown listeners
+			@logger.debug {"Calling shutdown listeners for '#{@id}'"}
+			@listeners[:shutdown].each {|id, block| block.call(self)}
+		end
+		
         # Load from json
         def self.createFromJSON(id, json)
             # Create WorkerAlgorithms
@@ -284,8 +314,23 @@ module Wkr
                 end
             }
             
+			# Create events
+			events = []
+			if (json.include? :events)
+				json[:events].each {|eventJson|
+					events << Event.createFromJSON(eventJson)
+				}
+			end
+			
             # Create worker
-            return Worker.new(json[:name], id, "profit", algs, json[:percentProfitThreshold])
+            worker = Worker.new(json[:name], id, "profit", algs, json[:percentProfitThreshold], events)
+			
+			# Register events
+			events.each {|event|
+				event.addToWorker(worker)
+			}
+			
+			return worker;
         end
     end
 

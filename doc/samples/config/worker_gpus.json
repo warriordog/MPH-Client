@@ -44,7 +44,33 @@
             }
           }
         }
-      }
+      },
+      "events": [
+        {
+          "trigger": "startup",
+          "actions": [
+            {
+              "id": "log",
+              "args": {
+                "severity": "INFO",
+                "message": "AMD miner started up"
+              }
+            }
+          ]
+        },
+        {
+          "trigger": "shutdown",
+          "actions": [
+            {
+              "id": "log",
+              "args": {
+                "severity": "INFO",
+                "message": "AMD miner shut down"
+              }
+            }
+          ]
+        }
+      ]
     }
   }
 }
