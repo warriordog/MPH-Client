@@ -11,6 +11,10 @@ module Events
 	@@triggers = {}
 	@@actions = {}
 	
+	# ------------------
+	# | Action classes |
+	# ------------------
+	
 	# An action that can be taken
 	class Action
 		def initialize(id, actionId, args)
@@ -92,6 +96,10 @@ module Events
 		end
 	end
 
+	# -------------------
+	# | Trigger classes |
+	# -------------------
+	
 	# An event trigger
 	class Trigger
 		def initialize(id, triggerId, filters)
@@ -124,65 +132,72 @@ module Events
 		end
 	end
 
-	# Trigger that activates when worker starts
-	class StartupTrigger < Trigger
-		def initialize(id, triggerId, filters)
+	# Mid-class for triggers activated by worker signals
+	class WorkerTrigger < Trigger
+		def initialize(id, triggerId, filters, signal)
 			super(id, triggerId, filters)
+			
+			# The signal to expect
+			@signal = signal
 		end
 		
-		# Override
+		# Add this trigger to a worker
 		def addToWorker(worker, event)
-			worker.addListener(:startup, self) { |wkr, vars|
-				Events.logger.debug {"Activating startup trigger on '#{worker.id}'"}
+			worker.addListener(@signal, self) { |wkr, vars|
+				prepareVars(wkr, vars)
 				event.fire(worker, vars)
 			}
 		end
 		
-		# Override
+		# Remove this trigger from a worker
 		def removeFromWorker(worker)
 			worker.removeListener(self)
+		end
+		
+		# Override in subclasses to tweak vars before passing on
+		def prepareVars(worker, vars)
+		end
+	end
+	
+	# Trigger that activates when worker starts
+	class StartupTrigger < WorkerTrigger
+		def initialize(id, triggerId, filters)
+			super(id, triggerId, filters, :startup)
+		end
+		
+		# Override
+		def prepareVars(worker, vars)
+			Events.logger.debug {"Activating startup trigger on '#{worker.id}'"}
 		end
 	end
 
 	# Trigger that activates when worker stops
-	class ShutdownTrigger < Trigger
+	class ShutdownTrigger < WorkerTrigger
 		def initialize(id, triggerId, filters)
-			super(id, triggerId, filters)
+			super(id, triggerId, filters, :shutdown)
 		end
 		
 		# Override
-		def addToWorker(worker, event)
-			worker.addListener(:shutdown, self) { |wkr, vars|
-				Events.logger.debug {"Activating shutdown trigger on '#{worker.id}'"}
-				event.fire(worker, vars)
-			}
-		end
-		
-		# Override
-		def removeFromWorker(worker)
-			worker.removeListener(self)
+		def prepareVars(worker, vars)
+			Events.logger.debug {"Activating shutdown trigger on '#{worker.id}'"}
 		end
 	end
 
 	# Trigger that activates when worker switches coins
-	class CoinSwitchTrigger < Trigger
+	class CoinSwitchTrigger < WorkerTrigger
 		def initialize(id, triggerId, filters)
-			super(id, triggerId, filters)
+			super(id, triggerId, filters, :switch_coin)
 		end
 		
 		# Override
-		def addToWorker(worker, event)
-			worker.addListener(:switch_coin, self) { |wkr, vars|
-				Events.logger.debug {"Activating coin switch trigger on '#{worker.id}'"}
-				event.fire(worker, vars)
-			}
-		end
-		
-		# Override
-		def removeFromWorker(worker)
-			worker.removeListener(self)
+		def prepareVars(worker, vars)
+			Events.logger.debug {"Activating coin switch trigger on '#{worker.id}'"}
 		end
 	end
+	
+	# --------------
+	# | Event Code |
+	# --------------
 	
 	# Parent event class
 	class Event
