@@ -15,6 +15,11 @@
       "workingDir": "miners/ethminer",
       "executable": "./ethminer",
       "args": ""
+    },
+    "ping_test": {
+      "workingDir": "./",
+      "executable": "ping",
+      "args": "$(PING.HOST)"
     }
   }
 }

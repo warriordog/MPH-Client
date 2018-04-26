@@ -27,9 +27,9 @@ module Application
 		
 		def args(context)
 			if (context != nil && !context.empty?)
-				return @args
-			else
 				return Args.injectArgs(@args, context, @logger)
+			else
+				return @args
 			end
 		end
 		

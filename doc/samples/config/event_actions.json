@@ -42,6 +42,15 @@
         "severity": "INFO",
         "message": "Worker $(WORKER.ID) has stopped mining."
       }
+    },
+    "run_ping_google": {
+      "action_id": "exec_app",
+      "args": {
+        "id": "ping_test",
+        "context": {
+          "PING.HOST": "www.google.com"
+        }
+      }
     }
   }
 }

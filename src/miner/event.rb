@@ -51,9 +51,12 @@ module Events
 				
 				# Create appropriate subclass
 				case action
+				# Log action
 				when "log"
-					# Log action
 					return ActionLog.new(id, action, args)
+				# Exec action
+				when "exec_app"
+					return ActionRun.new(id, action, args)
 				else
 					Events.logger.warn {"Unkown action id '#{action}' for action '#{id}'.  It will not be created."}
 					
@@ -66,7 +69,7 @@ module Events
 		end
 	end
 
-	# Action for 
+	# Action for logging a string
 	class ActionLog < Action
 		def initialize(id, actionId, args)
 			super(id, actionId, args)
@@ -109,7 +112,7 @@ module Events
 			else
 				# empty lambda
 				@logFunc = lambda {}
-				Events.logger.warn "Event action '#{actionId}' is missing required argument(s) 'severity', 'message' and will be disabled."
+				Events.logger.warn "Event action '#{actionId}' in action '#{id}' is missing required argument(s) 'severity', 'message' and will be disabled."
 			end
 		end
 		
@@ -119,6 +122,37 @@ module Events
 		end
 	end
 
+	# Action for running a registered program
+	class ActionRun < Action
+		def initialize(id, actionId, args)
+			super(id, actionId, args)
+			
+			if (args.include? :id)
+				# Get the matching app
+				@app = Application.getApp(args[:id])
+				if (@app != nil)
+				
+					# Args from config are symbolized but we need un-symbolized args for app
+					@appArgs = {}
+					if (args.include? :context)
+						args[:context].each {|key, value| @appArgs[key.to_s] = value}
+					end
+				else
+					Events.logger.warn "Unkown app '#{args[:id]}' in action '#{id}'"
+				end
+			else
+				Events.logger.warn "Event action '#{actionId}' in action '#{id}' is missing required argument(s) 'id' and will be disabled."
+				@app = nil
+			end
+		end
+		
+		# Override
+		def execute(worker, vars)
+			exec = Application::Executor.new(@app)
+			exec.start(@appArgs)
+		end
+	end
+	
 	# -------------------
 	# | Trigger classes |
 	# -------------------

@@ -88,6 +88,10 @@
         {
           "trigger": "stop_mining",
           "action": "log_stop_mining"
+        },
+        {
+          "trigger": "worker_startup",
+          "action": "run_ping_google"
         }
       ]
     }
