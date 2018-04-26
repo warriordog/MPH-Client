@@ -108,19 +108,7 @@ module Wkr
         attr_reader :worker, :algorithm, :coin, :miner, :executor, :host, :hashrate, :profit
         
         def start()
-			# Define variables
-			context = {
-				'CONFIG.NETWORK_TIMEOUT' => Config.settings[:reconnect_interval].to_s,
-				'CONFIG.ACCOUNT' => Config.settings[:account].to_s,
-				'JOB.HOST' => "#{@host.addr}:#{@host.port}",
-				'JOB.HOST.NAME' => @host.addr.to_s,
-				'JOB.HOST.PORT' => @host.port.to_s,
-				'JOB.WORKER.ID' => @worker.id.to_s,
-				'JOB.WORKER.USERNAME' => "#{Config.settings[:account]}.#{@worker.id}",
-				'JOB.COIN.ID' => miner.remapCoin(@coin.id.to_s),
-				'JOB.COIN.ALGO' => @algorithm.id.to_s,
-			}
-			
+			context = @worker.getAppEnvironment()
 		
             # Run algorithm
             @executor.start(context)
@@ -342,6 +330,21 @@ module Wkr
 			
 			# Detach triggers
 			@events.each {|event| event.trigger.removeFromWorker(self)}
+		end
+		
+		# Gets a set of context variables for an app
+		def getAppEnvironment()
+			return {
+				'CONFIG.NETWORK_TIMEOUT' => Config.settings[:reconnect_interval].to_s,
+				'CONFIG.ACCOUNT' => Config.settings[:account].to_s,
+				'JOB.HOST' => "#{@currentJob&.host&.addr}:#{@currentJob&.host&.port}",
+				'JOB.HOST.NAME' => @currentJob&.host&.addr.to_s,
+				'JOB.HOST.PORT' => @currentJob&.host&.port.to_s,
+				'JOB.WORKER.ID' => @id.to_s,
+				'JOB.WORKER.USERNAME' => "#{Config.settings[:account]}.#{@id}",
+				'JOB.COIN.ID' => @currentJob&.miner&.remapCoin(@currentJob&.coin&.id.to_s),
+				'JOB.COIN.ALGO' => @currentJob&.algorithm&.id.to_s,
+			}
 		end
 		
 		# Fires an event with the specified variables

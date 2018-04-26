@@ -51,6 +51,17 @@
           "PING.HOST": "www.google.com"
         }
       }
+    },
+    "ping_google_sync": {
+      "action_id": "exec_any",
+      "args": {
+        "synchronized": true,
+        "command": {
+          "executable": "ping",
+          "workingDir": "./",
+          "args": "www.google.com"
+        }
+      }
     }
   }
 }

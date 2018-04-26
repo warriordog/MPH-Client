@@ -61,13 +61,16 @@ module Application
 			# ID of running process (nil if dead)
 			# Not synchronized, so be careful when accessing
 			@pid = nil
+			
+			# Monitor thread (may or may not have PID data, don't count on it)
+			@thread = nil
 		end
 		
 		attr_reader :app, :pid
 		
 		def start(context = {})
 			# don't start if already running
-			if (!alive?())
+			if (!started?())
 			
 				@app.logger.info "Starting #{@app.id}."
 		   
@@ -104,7 +107,8 @@ module Application
 								@app.logger.debug "Read thread ended"
 							}
 
-							Thread.new {
+							# Thread that waits for process to exit
+							@thread = Thread.new {
 								# Join is necessary or else the pipes will just swallow all data.
 								# But, we can put the join in its own thread and not block up the main program
 								thr.join
@@ -127,7 +131,7 @@ module Application
 							slave.close    # Don't need the slave
 
 							# Thread to read from process
-							Thread.new {
+							@thread = Thread.new {
 								begin
 									# Read until pipe closes
 									until (rawLine = master.gets()).nil? do
@@ -162,9 +166,9 @@ module Application
 				# Process.kill() is currently broken on windows.
 				# See https://blog.simplificator.com/2016/01/18/how-to-kill-processes-on-windows-using-ruby/
 				if (Gem.win_platform?)
-					if (!system("taskkill /pid #{@pid}"))
+					if (!system("taskkill /pid #{@pid}", :out => File::NULL, :err => File::NULL))
 						# Some processes must be forcefully killed
-						if (!system("taskkill /f /pid #{@pid}"))
+						if (!system("taskkill /f /pid #{@pid}", :out => File::NULL, :err => File::NULL))
 							@app.logger.error("Unable to stop miner!")
 						end
 					end
@@ -177,12 +181,13 @@ module Application
 			end
 			
 			@pid = nil
+			@thread = nil
 		end
 		
 		def started?()
 			# Signal 0 checks if process is alive
 			#return Process.kill(@pid, 0)
-			return @pid != nil
+			return @thread != nil
 		end
 		
 		# Checks if the process is alive and running
@@ -191,7 +196,7 @@ module Application
 				# Process.kill(0) does not work on windows
 				if (Gem.win_platform?)
 					# Use tasklist CMD to check.  Slow but only reasonable way I've found under windows
-					system("tasklist /FI \"PID eq #{@pid}\"")
+					system("tasklist /FI \"PID eq #{@pid}\"", :out => File::NULL, :err => File::NULL)
 				else
 					# Magic inlining from https://stackoverflow.com/a/32513298
 					#  Works because we expect an exception and don't care what it is
@@ -200,6 +205,14 @@ module Application
 			end
 			
 			return false
+		end
+		
+		# Blocks the calling thread until app exits
+		def waitForTerminate()
+			if (started?)
+				# wait for the monitor thread to close
+				@thread.join
+			end
 		end
 	end
 	

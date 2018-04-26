@@ -56,7 +56,10 @@ module Events
 					return ActionLog.new(id, action, args)
 				# Exec action
 				when "exec_app"
-					return ActionRun.new(id, action, args)
+					return ActionRun.new(id, action, args)				
+				# Exec any action
+				when "exec_any"
+					return ActionExec.new(id, action, args)
 				else
 					Events.logger.warn {"Unkown action id '#{action}' for action '#{id}'.  It will not be created."}
 					
@@ -150,6 +153,46 @@ module Events
 		def execute(worker, vars)
 			exec = Application::Executor.new(@app)
 			exec.start(@appArgs)
+		end
+	end
+	
+	# Action for directly running an unregistered program
+	class ActionExec < Action
+		def initialize(id, actionId, args)
+			super(id, actionId, args)
+			
+			# Get command name
+			if (args.include? :command)
+				# Set synchronized (or default to not)
+				if (args.include? :synchronized)
+					@synchronized = args[:synchronized]
+				else
+					@synchronized = false
+				end
+					
+				# Create app
+				@app = Application::App.createFromJSON("action/#{id}", args[:command])
+				
+				# Make sure it was created
+				if (@app == nil)
+					Events.logger.warn "Unable to create command in '#{actionId}'.  Action will be disabled."
+				end
+			else
+				Events.logger.warn "Event action '#{actionId}' in action '#{id}' is missing required argument(s) 'cmd' and will be disabled."
+			end
+		end
+		
+		# Override
+		def execute(worker, vars)
+			if (@app != nil)
+				exec = Application::Executor.new(@app)
+				exec.start(worker.getAppEnvironment())
+				
+				# Wait for finish
+				if (@synchronized)
+					exec.waitForTerminate()
+				end
+			end
 		end
 	end
 	
