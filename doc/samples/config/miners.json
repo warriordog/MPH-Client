@@ -5,7 +5,7 @@
       "name": "XMR-stak",
       "path": "miners/xmr-stak",
       "exec": "./xmr-stak",
-      "args": "--noAMD --noNVIDIA --noUAC --currency #COIN# -O #HOST#:#PORT# -u #ACCOUNT#.#WORKER_ID# -p z",
+      "args": "--noAMD --noNVIDIA --noUAC --currency $(JOB.COIN.ID) -O $(JOB.HOST) -u $(JOB.WORKER.USERNAME) -p z",
       "remap_coins": {
         "monero": "monero7"
       }
@@ -14,7 +14,7 @@
       "name": "CCMiner",
       "path": "miners/ccminer",
       "exec": "./ccminer-x64",
-      "args": "-r 0 -T #TIMEOUT# -a #ALGORITHM# -o stratum+tcp://#HOST#:#PORT# -u #ACCOUNT#.#WORKER_ID# -p z"
+      "args": "-r 0 -T $(CONFIG.NETWORK_TIMEOUT) -a $(JOB.COIN.ALGO) -o stratum+tcp://$(JOB.HOST) -u $(JOB.WORKER.USERNAME) -p z"
     },
     "ethminer": {
       "name": "Ethminer",

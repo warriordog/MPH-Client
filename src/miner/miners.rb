@@ -31,8 +31,34 @@ module Miners
         
         def args(job)
             # Not the most efficient way to do this, but this method is infrequently called 
-            return @args
-                .gsub("#TIMEOUT#", Config.settings[:switch_interval].to_s)
+            return @args.gsub(/(?<!\\)\$\(([\w.]*)\)/) {|match|
+				case $1
+				when 'CONFIG.NETWORK_TIMEOUT'
+					Config.settings[:reconnect_interval].to_s
+				when 'CONFIG.ACCOUNT'
+					Config.settings[:account].to_s
+				when 'JOB.HOST'
+					"#{job.host.addr}:#{job.host.port}"
+				when 'JOB.HOST.NAME'
+					job.host.addr.to_s
+				when 'JOB.HOST.PORT'
+					job.host.port.to_s
+				when 'JOB.WORKER.ID'
+					job.worker.id.to_s
+				when 'JOB.WORKER.USERNAME'
+					"#{Config.settings[:account]}.#{job.worker.id}"
+				when 'JOB.COIN.ID'
+					self.remapCoin(job.coin.id.to_s)
+				when 'JOB.COIN.ALGO'
+					job.algorithm.id.to_s
+				else
+					job.worker.logger.warn "Unkown miner argument '#{$1}'"
+					match
+				end
+			}
+			
+=begin
+                .gsub("#TIMEOUT#", Config.settings[:reconnect_interval].to_s)
                 .gsub("#HOST#", job.host.addr.to_s)
                 .gsub("#PORT#", job.host.port.to_s)
                 .gsub("#WORKER_ID#", job.worker.id.to_s)
@@ -40,6 +66,7 @@ module Miners
                 .gsub("#COIN#", self.remapCoin(job.coin.id.to_s))
                 .gsub("#ALGORITHM#", job.algorithm.id.to_s)
             ;
+=end
         end
         
         def remapCoin(inCoin)
