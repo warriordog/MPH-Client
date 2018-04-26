@@ -2,6 +2,11 @@
 # Worker event code
 #-------------------
 
+require 'util/args'
+require 'util/log'
+require 'miner/coins'
+require 'miner/miners' 
+
 # Events module
 module Events
     # Module logger
@@ -80,28 +85,19 @@ module Events
 					@logFunc = lambda {|worker, vars|
 					
 						# Fill in variables
-						currentMessage = message.gsub(/(?<!\\)\$\(([\w.]*)\)/) {|match|
-							# Make sure that variable name is valid
-							if (vars.include? $1)
-								# Convert to human readable
-								value = vars[$1]
-								
-								# Print out nil correctly
-								if (value == nil)
-									"nil"
-								# Print out floats in a reasonable way
-								elsif (value.is_a? Float)
-									"%0.8f" % [value]
-								# Print out normally
-								else
-									value.to_s
-								end
+						currentMessage = Args.injectArgs(message, vars, worker.logger) {|id, value|
+							# Print out nil correctly
+							if (value == nil)
+								"nil"
+							# Print out floats in a reasonable way
+							elsif (value.is_a? Float)
+								"%0.8f" % [value]
+							# Print out normally
 							else
-								worker.logger.warn "Unknown event variable '#{$1}'."
-								match
+								value.to_s
 							end
 						}
-						
+
 						# Finally print message 
 						worker.logger.log(severity, currentMessage)
 					}
