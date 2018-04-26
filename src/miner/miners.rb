@@ -5,6 +5,7 @@
 require 'util/log'
 require 'config'
 require 'util/args'
+require 'util/application'
 
 module Miners
     # Module logger
@@ -13,52 +14,64 @@ module Miners
     # Hash of ids -> miner
     @@miners = {}
     
+	# Miner-specific application
     class Miner
-        def initialize(id, name, path, exec, args, remap)
+        def initialize(id, app, remap)
             @id = id
-            @name = name
-            @path = path
-            @exec = exec
-            @args = args
+            @app = app
             
             # Map of symbol -> string
             @remapCoins = remap
-            
-            # If remap is nil then set default
-            @remapCoins ||= {}
         end
         
-        attr_reader :id, :name, :path, :exec
+        attr_reader :id, :app, :remapCoins
         
-        def args(job)
-			vars = {
-				'CONFIG.NETWORK_TIMEOUT' => Config.settings[:reconnect_interval].to_s,
-				'CONFIG.ACCOUNT' => Config.settings[:account].to_s,
-				'JOB.HOST' => "#{job.host.addr}:#{job.host.port}",
-				'JOB.HOST.NAME' => job.host.addr.to_s,
-				'JOB.HOST.PORT' => job.host.port.to_s,
-				'JOB.WORKER.ID' => job.worker.id.to_s,
-				'JOB.WORKER.USERNAME' => "#{Config.settings[:account]}.#{job.worker.id}",
-				'JOB.COIN.ID' => self.remapCoin(job.coin.id.to_s),
-				'JOB.COIN.ALGO' => job.algorithm.id.to_s,
-			}
-			
-			return Args.injectArgs(@args, vars, job.worker.logger)
+        def args(context)
+			return app.args(context)
         end
         
         def remapCoin(inCoin)
             outCoin = @remapCoins[inCoin.to_sym] # set outcoin to remap coin
-            outCoin ||= inCoin # if outcoin is nil (no remap coin) then set to input
-            
-            if (inCoin != outCoin)
+			
+            if (outCoin != nil)
                 Miners.logger.debug {"Remapping #{inCoin} to #{outCoin} for #{@id}"}
+				return outCoin
+			else
+				return inCoin
             end
-            
-            return outCoin
         end
         
+		def workingDir()
+			return app.workingDir
+		end
+		
+		def executable()
+			return app.executable
+		end
+		
+		def logge()
+			return app.logger
+		end
+		
         def self.createFromJSON(id, json)
-            return Miner.new(id, json[:name], json[:path], json[:exec], json[:args], json[:remap_coins])
+			if (json.include? :app)
+				app = Application.getApp(json[:app])
+				if (app != nil)
+					if (json.include? :remap_coins)
+						remap = json[:remap_coins]
+					else
+						remap = {}
+					end
+			
+					return Miner.new(id, app, remap)
+				else
+					logger.warn "Application '#{json[:app]}' is missing.  Miner '#{id}' will not be created."
+				end
+			else
+				logger.warn "Miner '#{id}' is missing an application.  It will not be created."
+			end
+			
+			return nil
         end
         
     end

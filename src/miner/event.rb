@@ -85,7 +85,7 @@ module Events
 					@logFunc = lambda {|worker, vars|
 					
 						# Fill in variables
-						currentMessage = Args.injectArgs(message, vars, worker.logger) {|id, value|
+						currentMessage = Args.injectArgs(message, vars, worker.logger) {|key, value|
 							# Print out nil correctly
 							if (value == nil)
 								"nil"

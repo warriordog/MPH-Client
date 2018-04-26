@@ -4,10 +4,11 @@
 
 require 'config'
 require 'util/log'
-require 'miner/executor'
+#require 'miner/executor'
 require 'miner/coins'
 require 'miner/miners' 
 require 'miner/event'
+require 'util/application'
 
 module Wkr
 
@@ -29,11 +30,11 @@ module Wkr
         def self.createFromJSON(id, json)
             # Look up miner
             miner = Miners.miners[id]
-            if (miner == nil)
-                Coins.logger.warn("Missing miner: #{id}")
+            if (miner != nil)
+				return WorkerMiner.new(miner, json[:rate])
+			else
+                Coins.logger.warn("Missing miner: '#{id}'.")
             end
-            
-            return WorkerMiner.new(miner, json[:rate])
         end
     end
 
@@ -101,16 +102,28 @@ module Wkr
             @host = host
 			@hashrate = hashrate	# Hashrate of this job
 			@profit = profit		# Profit of this job (per day)
-			
-            @executor = nil
+            @executor = Application::Executor.new(miner.app)
         end
         
         attr_reader :worker, :algorithm, :coin, :miner, :executor, :host, :hashrate, :profit
         
         def start()
+			# Define variables
+			context = {
+				'CONFIG.NETWORK_TIMEOUT' => Config.settings[:reconnect_interval].to_s,
+				'CONFIG.ACCOUNT' => Config.settings[:account].to_s,
+				'JOB.HOST' => "#{@host.addr}:#{@host.port}",
+				'JOB.HOST.NAME' => @host.addr.to_s,
+				'JOB.HOST.PORT' => @host.port.to_s,
+				'JOB.WORKER.ID' => @worker.id.to_s,
+				'JOB.WORKER.USERNAME' => "#{Config.settings[:account]}.#{@worker.id}",
+				'JOB.COIN.ID' => miner.remapCoin(@coin.id.to_s),
+				'JOB.COIN.ALGO' => @algorithm.id.to_s,
+			}
+			
+		
             # Run algorithm
-            @executor = Executor.new()
-            @executor.start(self)
+            @executor.start(context)
         end
         
         def running?()
@@ -244,8 +257,7 @@ module Wkr
                     
                     # Get WorkerAlgorithm for this coin
                     wkrAlgo = @algos[coin.algorithm.id]
-					# Get miner for this worker/algorithm
-					# TODO select best miner
+					# Get miner for this worker/algorithm (miners are sorted by hashrate already)
 					wkrMiner = wkrAlgo.wkrMiners[0]
                     # Get best miner for this coin
                     miner = wkrMiner.miner

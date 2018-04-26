@@ -11,6 +11,7 @@ require 'miner/coins'
 require 'miner/miners'
 require 'api/mph'
 require 'miner/event'
+require 'util/application'
 
 module MPHClient
     # Global logger (default creation is temporary until config is loaded)
@@ -76,6 +77,9 @@ module MPHClient
                         # Create "real" root logger
                         @@rootLog = Log.createLogger("root")
                     
+						# Load applications
+						Application.loadApps()
+					
                         # Load coins and algorithms
                         Coins.loadAlgorithms()
                     

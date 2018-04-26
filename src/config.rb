@@ -13,6 +13,7 @@ CFG_VERSION_MINERS = 6
 CFG_VERSION_WORKERS = 7
 CFG_VERSION_TRIGGERS = 0
 CFG_VERSION_ACTIONS = 0
+CFG_VERSION_APPLICATIONS = 0
 
 module Config
     #Config module logger
@@ -35,6 +36,9 @@ module Config
 	
     # Actions json data
     @@actions = nil
+	
+    # Applications json data
+    @@applications = nil
 
     def self.loadConfig(cfgfile)
         # Read main file
@@ -46,7 +50,8 @@ module Config
             @@algorithms = self.loadJson(json[:algorithms], CFG_VERSION_ALGORITHMS)[:algorithms]
             @@miners = self.loadJson(json[:miners], CFG_VERSION_MINERS)[:miners]
             @@triggers = self.loadJson(json[:triggers], CFG_VERSION_TRIGGERS)[:triggers]
-            @@actions = self.loadJson(json[:actions], CFG_VERSION_TRIGGERS)[:actions]
+            @@actions = self.loadJson(json[:actions], CFG_VERSION_ACTIONS)[:actions]
+            @@applications = self.loadJson(json[:applications], CFG_VERSION_APPLICATIONS)[:applications]
 			
             @@workers = {}
             json[:workers].each { |workerFile|
@@ -60,7 +65,7 @@ module Config
         end
         
         # Make sure it loaded
-        return @@settings != nil && @@algorithms != nil && @@miners != nil && @@workers != nil && @@triggers != nil&& @@actions != nil
+        return @@settings != nil && @@algorithms != nil && @@miners != nil && @@workers != nil && @@triggers != nil && @@actions != nil && @@applications != nil
     end
     
     def self.loadJson(path, expectedVersion = CFG_VERSION_DEFAULT)
@@ -123,5 +128,9 @@ module Config
     
     def self.actions()
         return @@actions
+    end
+    
+    def self.applications()
+        return @@applications
     end
 end

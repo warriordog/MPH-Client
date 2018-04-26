@@ -13,6 +13,7 @@
   "miners": "doc/samples/config/miners.json",
   "triggers": "doc/samples/config/event_triggers.json",
   "actions": "doc/samples/config/event_actions.json",
+  "applications": "doc/samples/config/applications.json",
   "workers": [
     "doc/samples/config/worker_gpus.json",
     "doc/samples/config/worker_cpus.json"
