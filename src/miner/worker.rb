@@ -266,6 +266,12 @@ module Wkr
 						
 						# Fire coin switch event
 						fireEvent(:switch_coin, {'OLD_COIN' => lastCoin&.id, 'NEW_COIN' => coin.id})
+					
+						# Fire mining start event
+						# lastCoin is nil if there was no previous job
+						if (lastCoin == nil)
+							fireEvent(:start_mining, {})
+						end
                     else
                         @logger.debug("Not changing coins")
                     end
@@ -279,6 +285,9 @@ module Wkr
         
         # Stop mining (if mining)
         def stopMining()
+			# Fire mining stop events
+			fireEvent(:stop_mining, {'WAS_MINING' => (@currentJob != nil)})
+		
             if (@currentJob != nil)
                 @currentJob.stop()
                 @currentJob = nil

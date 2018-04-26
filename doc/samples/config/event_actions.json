@@ -28,6 +28,20 @@
         "severity": "WARN",
         "message": "Worker $(WORKER_ID) is incorrectly switching from $(OLD_COIN) to $(NEW_COIN)."
       }
+    },
+    "log_start_mining": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Worker $(WORKER_ID) has started mining."
+      }
+    },
+    "log_stop_mining": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Worker $(WORKER_ID) has stopped mining."
+      }
     }
   }
 }

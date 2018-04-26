@@ -121,6 +121,10 @@ module Events
 					return ShutdownTrigger.new(id, triggerId, json[:filters])
 				when "switch_coin"
 					return CoinSwitchTrigger.new(id, triggerId, json[:filters])
+				when "start_mining"
+					return StartMiningTrigger.new(id, triggerId, json[:filters])
+				when "stop_mining"
+					return StopMiningTrigger.new(id, triggerId, json[:filters])
 				else
 					Events.logger.warn "Unkown trigger id '#{triggerId}' for trigger '#{id}'.  It will not be created."
 				end
@@ -195,11 +199,35 @@ module Events
 		end
 	end
 	
+	# Trigger that activates when worker starts mining
+	class StartMiningTrigger < WorkerTrigger
+		def initialize(id, triggerId, filters)
+			super(id, triggerId, filters, :start_mining)
+		end
+		
+		# Override
+		def prepareVars(worker, vars)
+			Events.logger.debug {"Activating start mining trigger on '#{worker.id}'"}
+		end
+	end
+	
+	# Trigger that activates when worker stops mining
+	class StopMiningTrigger < WorkerTrigger
+		def initialize(id, triggerId, filters)
+			super(id, triggerId, filters, :stop_mining)
+		end
+		
+		# Override
+		def prepareVars(worker, vars)
+			Events.logger.debug {"Activating stop mining trigger on '#{worker.id}'"}
+		end
+	end
+	
 	# --------------
 	# | Event Code |
 	# --------------
 	
-	# Parent event class
+	# Event class
 	class Event
 		def initialize(trigger, action)
 			@trigger = trigger

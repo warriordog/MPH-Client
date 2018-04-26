@@ -35,7 +35,16 @@
         {
           "trigger": "coin_switch",
           "action": "log_switch"
+        },
+        {
+          "trigger": "start_mining",
+          "action": "log_start_mining"
+        },
+        {
+          "trigger": "stop_mining",
+          "action": "log_end_mining"
         }
+        
       ]
     },
     "gpus_amd": {

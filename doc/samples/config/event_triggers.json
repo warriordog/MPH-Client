@@ -3,21 +3,23 @@
   "triggers": {
     "worker_startup": {
       "trigger_id": "startup",
-      "filters": {
-      
-      }
+      "filters": {}
     },
     "worker_shutdown": {
       "trigger_id": "shutdown",
-      "filters": {
-        
-      }
+      "filters": {}
     },
     "coin_switch": {
       "trigger_id": "switch_coin",
-      "filters": {
-        
-      }
+      "filters": {}
+    },
+    "start_mining": {
+      "trigger_id": "start_mining",
+      "filters": {}
+    },
+    "stop_mining": {
+      "trigger_id": "stop_mining",
+      "filters": {}
     }
   }
 }
