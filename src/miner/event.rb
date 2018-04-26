@@ -77,7 +77,34 @@ module Events
 					message = args[:message]
 					
 					# setup lambda to log
-					@logFunc = lambda {|worker, vars| worker.logger.log(severity, message)}
+					@logFunc = lambda {|worker, vars|
+					
+						# Fill in variables
+						currentMessage = message.gsub(/(?<!\\)\$\(([\w.]*)\)/) {|match|
+							# Make sure that variable name is valid
+							if (vars.include? $1)
+								# Convert to human readable
+								value = vars[$1]
+								
+								# Print out nil correctly
+								if (value == nil)
+									"nil"
+								# Print out floats in a reasonable way
+								elsif (value.is_a? Float)
+									"%0.8f" % [value]
+								# Print out normally
+								else
+									value.to_s
+								end
+							else
+								worker.logger.warn "Unknown event variable '#{$1}'."
+								match
+							end
+						}
+						
+						# Finally print message 
+						worker.logger.log(severity, currentMessage)
+					}
 				else
 					# empty lambda
 					@logFunc = lambda {}

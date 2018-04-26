@@ -5,42 +5,42 @@
       "action_id": "log",
       "args": {
         "severity": "INFO",
-        "message": "Worker $(WORKER_ID) starting"
+        "message": "Worker $(WORKER.ID) starting"
       }
     },
     "log_shutdown": {
       "action_id": "log",
       "args": {
         "severity": "INFO",
-        "message": "Worker $(WORKER_ID) shutting down"
+        "message": "Worker $(WORKER.ID) shutting down"
       }
     },
     "log_switch": {
       "action_id": "log",
       "args": {
         "severity": "INFO",
-        "message": "Worker $(WORKER_ID) is switching to $(NEW_COIN)."
+        "message": "Worker $(WORKER.ID) is switching to $(TASK.COIN.ID)($(TASK.COIN.ALGO)) on $(TASK.MINER.ID).  Estimated earnings: $(TASK.PROFIT) BTC/day."
       }
     },
     "log_bad_switch": {
       "action_id": "log",
       "args": {
         "severity": "WARN",
-        "message": "Worker $(WORKER_ID) is incorrectly switching from $(OLD_COIN) to $(NEW_COIN)."
+        "message": "Worker $(WORKER.ID) is incorrectly switching from $(TASK.LAST_COIN.ID) to $(TASK.COIN.ID)."
       }
     },
     "log_start_mining": {
       "action_id": "log",
       "args": {
         "severity": "INFO",
-        "message": "Worker $(WORKER_ID) has started mining."
+        "message": "Worker $(WORKER.ID) has started mining."
       }
     },
     "log_stop_mining": {
       "action_id": "log",
       "args": {
         "severity": "INFO",
-        "message": "Worker $(WORKER_ID) has stopped mining."
+        "message": "Worker $(WORKER.ID) has stopped mining."
       }
     }
   }

@@ -93,16 +93,19 @@ module Wkr
     end
 
     class WorkerJob
-        def initialize(worker, algorithm, coin, miner, host)
+        def initialize(worker, algorithm, coin, miner, host, hashrate, profit)
             @worker = worker
             @algorithm = algorithm
             @coin = coin
             @miner = miner
             @host = host
+			@hashrate = hashrate	# Hashrate of this job
+			@profit = profit		# Profit of this job (per day)
+			
             @executor = nil
         end
         
-        attr_reader :worker, :algorithm, :coin, :miner, :executor, :host
+        attr_reader :worker, :algorithm, :coin, :miner, :executor, :host, :hashrate, :profit
         
         def start()
             # Run algorithm
@@ -237,12 +240,15 @@ module Wkr
                 
                 # Make sure profit increase exceeds threshold
                 currentStatCoin = statCoins.find{|sCoin| (@currentJob != nil) && (sCoin[:coin_name] == @currentJob.coin.id)}
-                if (currentStatCoin == nil || (statCoin[:CalculatedProfit] >= (currentStatCoin[:CalculatedProfit]) * @percentProfitThreshold))
+                if (currentStatCoin == nil || (statCoin[:CalculatedProfit] >= (currentStatCoin[:CalculatedProfit] * @percentProfitThreshold)))
                     
                     # Get WorkerAlgorithm for this coin
                     wkrAlgo = @algos[coin.algorithm.id]
+					# Get miner for this worker/algorithm
+					# TODO select best miner
+					wkrMiner = wkrAlgo.wkrMiners[0]
                     # Get best miner for this coin
-                    miner = wkrAlgo.wkrMiners[0].miner
+                    miner = wkrMiner.miner
                     
                     # Create host for this task
                     host = Host.new(statCoin[:direct_mining_host], statCoin[:port])
@@ -261,11 +267,11 @@ module Wkr
                         end
 						
                         # Set up new job
-                        @currentJob = WorkerJob.new(self, wkrAlgo.algorithm, coin, miner, host)
+                        @currentJob = WorkerJob.new(self, wkrAlgo.algorithm, coin, miner, host, wkrMiner.rate, statCoin[:CalculatedProfit])
                         @currentJob.start()
 						
 						# Fire coin switch event
-						fireEvent(:switch_coin, {'OLD_COIN' => lastCoin&.id, 'NEW_COIN' => coin.id})
+						fireEvent(:switch_coin, {'TASK.LAST_COIN.ID' => lastCoin&.id, 'TASK.LAST_COIN.ALGO' => lastCoin&.algorithm&.id})
 					
 						# Fire mining start event
 						# lastCoin is nil if there was no previous job
@@ -286,7 +292,7 @@ module Wkr
         # Stop mining (if mining)
         def stopMining()
 			# Fire mining stop events
-			fireEvent(:stop_mining, {'WAS_MINING' => (@currentJob != nil)})
+			fireEvent(:stop_mining, {'STOP_MINING.WAS_MINING' => (@currentJob != nil)})
 		
             if (@currentJob != nil)
                 @currentJob.stop()
@@ -312,7 +318,6 @@ module Wkr
 			@events.each {|event| event.trigger.addToWorker(self, event)}
 			
 			# Call startup listeners
-			#@listeners[:startup].each {|id, block| block.call(self)}
 			fireEvent(:startup, {})
 		end
 		
@@ -321,7 +326,6 @@ module Wkr
 			@logger.debug {"Shutting down worker."}
 			
 			# Call shutdown listeners
-			#@listeners[:shutdown].each {|id, block| block.call(self)}
 			fireEvent(:shutdown, {})
 			
 			# Detach triggers
@@ -330,6 +334,25 @@ module Wkr
 		
 		# Fires an event with the specified variables
 		def fireEvent(eventId, vars)
+			# Vars cannot be nil
+			if (vars == nil)
+				vars = {}
+			end
+		
+			# Add global vars
+			vars['WORKER.ID'] = @id
+			
+			if (@currentJob != nil) 
+				vars['TASK.ACTIVE'] = true
+				vars['TASK.PROFIT'] = @currentJob.profit
+				vars['TASK.COIN.ID'] = @currentJob.coin.id
+				vars['TASK.COIN.ALGO'] = @currentJob.coin.algorithm.id
+				vars['TASK.MINER.ID'] = @currentJob.miner.id
+				vars['TASK.MINER.RATE'] = @currentJob.hashrate
+			else
+				vars['TASK.ACTIVE'] = false
+			end
+		
 			@listeners[eventId].each {|id, block|
 				block.call(self, vars)
 			}

@@ -27,7 +27,15 @@
         },
         {
           "trigger": "coin_switch",
-          "action": "log_bad_switch"
+          "action": "log_switch"
+        },
+        {
+          "trigger": "start_mining",
+          "action": "log_start_mining"
+        },
+        {
+          "trigger": "stop_mining",
+          "action": "log_stop_mining"
         }
       ]
     }

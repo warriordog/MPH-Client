@@ -42,7 +42,7 @@
         },
         {
           "trigger": "stop_mining",
-          "action": "log_end_mining"
+          "action": "log_stop_mining"
         }
         
       ]
@@ -80,6 +80,14 @@
         {
           "trigger": "coin_switch",
           "action": "log_switch"
+        },
+        {
+          "trigger": "start_mining",
+          "action": "log_start_mining"
+        },
+        {
+          "trigger": "stop_mining",
+          "action": "log_stop_mining"
         }
       ]
     }
