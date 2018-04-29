@@ -11,6 +11,8 @@ require 'miner/coins'
 require 'miner/miners'
 require 'api/mph'
 require 'miner/event'
+require 'miner/triggers'
+require 'miner/actions'
 require 'util/application'
 
 module MPHClient
@@ -87,7 +89,8 @@ module MPHClient
                         Miners.loadMiners()
                     
 						# Load event actions and triggers
-						Events.loadActionsAndEvents()
+						Triggers.loadTriggers()
+						Actions.loadActions()
 					
                         # Load workers
                         workers = Wkr.loadWorkers()
