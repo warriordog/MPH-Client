@@ -1,8 +1,6 @@
-# Output from running app
+# Test directories
 /log/
-
-# Test directory
-/test/
+/miners/
 
 *.gem
 *.rbc

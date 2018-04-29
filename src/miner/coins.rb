@@ -5,8 +5,8 @@
 require 'util/log'
 
 module Coins
-    # Module logger
-    @@logger = Log.createLogger("Coins", toFile: true, toConsole: true)
+    # Module logger (lazy created to make sure defaults are set)
+    @@logger = nil
     
     # Hash of ids -> algorithms
     @@algorithms = {}
@@ -83,6 +83,9 @@ module Coins
     end
     
     def self.logger()
+        if (@@logger == nil)
+            @@logger = Log.createLogger("Coins")
+        end
         return @@logger
     end
     

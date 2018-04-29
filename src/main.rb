@@ -10,6 +10,9 @@ require 'miner/worker'
 require 'miner/coins'
 require 'miner/miners'
 require 'api/mph'
+require 'miner/event/triggers'
+require 'miner/event/actions'
+require 'util/application'
 
 module MPHClient
     # Global logger (default creation is temporary until config is loaded)
@@ -18,6 +21,9 @@ module MPHClient
     def self.runMainLoop(workers)
         running = true
 
+        # Startup workers
+        workers.each {|worker| worker.startup()}
+        
         # setup coin change timer
         timerThread = Thread.new {
             logger = Log.createLogger("SwitchTimer")
@@ -50,11 +56,14 @@ module MPHClient
         
         # Wait for all threads to end
         timerThread.join()
+        
+        # Shut down workers
+        workers.each {|worker| worker.shutdown()}
     end
     
     def self.start()
         # Print version
-        @@rootLog.info("MPH-Client v0.1.1 (development)")
+        @@rootLog.info("MPH-Client v0.2.0 (development)")
 
         # Load config
         if (ARGV.length > 0)
@@ -69,11 +78,18 @@ module MPHClient
                         # Create "real" root logger
                         @@rootLog = Log.createLogger("root")
                     
+                        # Load applications
+                        Application.loadApps()
+                    
                         # Load coins and algorithms
                         Coins.loadAlgorithms()
                     
                         # Load miners
                         Miners.loadMiners()
+                    
+                        # Load event actions and triggers
+                        Triggers.loadTriggers()
+                        Actions.loadActions()
                     
                         # Load workers
                         workers = Wkr.loadWorkers()

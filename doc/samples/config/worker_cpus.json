@@ -1,5 +1,5 @@
 {
-  "config_version": 7,
+  "config_version": 8,
   "workers": {
     "cpus": {
       "name": "CPUs",
@@ -15,7 +15,13 @@
             }
           }
         }
-      }
+      },
+      "events": [
+        {
+          "trigger": "coin_switch",
+          "action": "log_switch_coin"
+        }
+      ]
     }
   }
 }

@@ -1,0 +1,96 @@
+{
+  "config_version": 0,
+  "actions": {
+    "log_startup": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Worker $(WORKER.ID) starting"
+      }
+    },
+    "log_shutdown": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Worker $(WORKER.ID) shutting down"
+      }
+    },
+    "log_switch_coin": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Worker is switching coins to $(TASK.COIN.ID) ($(TASK.COIN.ALGO)) on $(TASK.MINER.ID).  Estimated earnings: $(TASK.PROFIT) BTC/day."
+      }
+    },
+    "log_switch_algo": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Worker is switching algorithms to $(TASK.COIN.ALGO)."
+      }
+    },
+    "log_start_mining": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Worker $(WORKER.ID) has started mining."
+      }
+    },
+    "log_stop_mining": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Worker $(WORKER.ID) has stopped mining."
+      }
+    },
+    "pause_mining": {
+      "action_id": "pause_mining",
+      "args": {}
+    },
+    "resume_mining": {
+      "action_id": "resume_mining",
+      "args": {}
+    },
+    "log_timer_1": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Timer 1s triggered for $(WORKER.ID)."
+      }
+    },
+    "log_timeout_15": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Timer 15s triggered for $(WORKER.ID)."
+      }
+    },
+    "log_custom": {
+      "action_id": "log_custom",
+      "args": {
+        "name": "Custom_Logger",
+        "message": "This is a custom logger fired from $(WORKER.ID)."
+      }
+    },
+    "run_ping_google": {
+      "action_id": "exec_app",
+      "args": {
+        "id": "ping_test",
+        "context": {
+          "PING.HOST": "www.google.com"
+        }
+      }
+    },
+    "ping_google_sync": {
+      "action_id": "exec_any",
+      "args": {
+        "synchronized": true,
+        "command": {
+          "executable": "ping",
+          "workingDir": "./",
+          "args": "www.google.com"
+        }
+      }
+    }
+  }
+}

@@ -1,16 +1,18 @@
 {
-  "config_version": 6,
+  "config_version": 7,
   "settings": {
     "api_key": "",
     "account": "account",
     "switch_interval": 900,
     "reconnect_interval": 60,
     "log_to_file": true,
-    "log_level": "DEBUG",
-    "show_miner_output": false
+    "log_level": "INFO"
   },
-  "algorithms": "doc/samples/config/algorithms.json",
-  "miners": "doc/samples/config/miners.json",
+  "algorithms": ["doc/samples/config/algorithms.json"],
+  "miners": ["doc/samples/config/miners.json"],
+  "triggers": ["doc/samples/config/event_triggers.json"],
+  "actions": ["doc/samples/config/event_actions.json"],
+  "applications": ["doc/samples/config/applications.json"],
   "workers": [
     "doc/samples/config/worker_gpus.json",
     "doc/samples/config/worker_cpus.json"

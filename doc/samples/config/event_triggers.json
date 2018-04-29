@@ -1,0 +1,47 @@
+{
+  "config_version": 0,
+  "triggers": {
+    "worker_startup": {
+      "trigger_id": "startup",
+      "filters": {}
+    },
+    "worker_shutdown": {
+      "trigger_id": "shutdown",
+      "filters": {}
+    },
+    "coin_switch": {
+      "trigger_id": "switch_coin",
+      "filters": {}
+    },
+    "start_mining": {
+      "trigger_id": "start_mining",
+      "filters": {}
+    },
+    "stop_mining": {
+      "trigger_id": "stop_mining",
+      "filters": {}
+    },
+    "algo_switch": {
+      "trigger_id": "switch_algorithm",
+      "filters": {}
+    },
+    "timer_1s": {
+      "trigger_id": "timer",
+      "filters": {
+        "interval": "1.0"
+      }
+    },
+    "timer_15s": {
+      "trigger_id": "timer",
+      "filters": {
+        "interval": "15"
+      }
+    },
+    "timeout_15s": {
+      "trigger_id": "timeout",
+      "filters": {
+        "delay": "15"
+      }
+    }
+  }
+}

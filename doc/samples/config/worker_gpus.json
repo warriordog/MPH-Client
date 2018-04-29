@@ -1,5 +1,5 @@
 {
-  "config_version": 7,
+  "config_version": 8,
   "workers": {
     "gpus_nvidia": {
       "name": "NVIDIA GPUs",
@@ -22,7 +22,13 @@
             }
           }
         }
-      }
+      },
+      "events": [
+        {
+          "trigger": "coin_switch",
+          "action": "log_switch_coin"
+        }
+      ]
     },
     "gpus_amd": {
       "name": "AMD GPUs",
@@ -44,7 +50,17 @@
             }
           }
         }
-      }
+      },
+      "events": [
+        {
+          "trigger": "coin_switch",
+          "action": "log_switch_coin"
+        },
+        {
+          "trigger": "worker_startup",
+          "action": "pause_mining"
+        }
+      ]
     }
   }
 }

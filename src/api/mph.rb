@@ -1,7 +1,6 @@
 #---------------------------------
 # API endpoints for MiningPoolHub
 #---------------------------------
-
 require 'json'
 require 'net/http'
 
@@ -9,7 +8,7 @@ require 'util/log'
 
 module MPH
     # Module logger
-    @@logger = Log.createLogger("MPH_API")
+    @@logger = nil
 
     # Gets the mining and profit statistics for a (or all) coin(s)
     def self.getMiningAndProfitsStatistics(coin = nil)
@@ -31,18 +30,18 @@ module MPH
                     return json[:return]
                 else
                     # Return nil if server had error
-                    @@logger.warn("Server error in getminingandprofitsstatistics: '#{resp[:return]}'")
+                    MPH.logger.warn("Server error in getminingandprofitsstatistics: '#{resp[:return]}'")
                     return nil
                 end
             else
-                @@logger.error("Network error while getting mining statistics.")
+                MPH.logger.error("Network error while getting mining statistics.")
             end
         rescue URI::InvalidURIError => e
-            @@logger.error("Invalid URI generated for MPH API, was a bad coin entered?  Error was #{e}")
+            MPH.logger.error("Invalid URI generated for MPH API, was a bad coin entered?  Error was #{e}")
         rescue JSON::JSONError => e
-            @@logger.error("Invalid JSON returned from MPH: #{e}")
+            MPH.logger.error("Invalid JSON returned from MPH: #{e}")
         rescue => e
-            @@logger.error("Error in getminingandprofitsstatistics:\n#{e}\n\t#{e.backtrace.join("\n\t")}")
+            MPH.logger.error("Error in getminingandprofitsstatistics:\n#{e}\n\t#{e.backtrace.join("\n\t")}")
         end
         
         # Return nil in case of errors
@@ -116,5 +115,12 @@ module MPH
                 return rateString.to_f  / 1000000.0
             end
         end
+    end
+    
+    def self.logger()
+        if (@@logger == nil)
+            @@logger = Log.createLogger("MPH_API")
+        end
+        return @@logger
     end
 end

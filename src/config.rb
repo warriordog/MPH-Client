@@ -7,26 +7,38 @@ require 'json'
 require 'util/log'
 
 CFG_VERSION_DEFAULT = 5
-CFG_VERSION_MAIN = 6
+CFG_VERSION_MAIN = 7
 CFG_VERSION_ALGORITHMS = 5
 CFG_VERSION_MINERS = 6
-CFG_VERSION_WORKERS = 7
+CFG_VERSION_WORKERS = 8
+CFG_VERSION_TRIGGERS = 0
+CFG_VERSION_ACTIONS = 0
+CFG_VERSION_APPLICATIONS = 0
 
 module Config
-    # Module logger
-    @@logger = Log.createLogger("Config")
+    #Config module logger
+    @@logger = nil
     
-    # Settings hash
+    # Settings json data
     @@settings = nil
     
-    # Algorithms hash
+    # Algorithms json data
     @@algorithms = nil
     
-    # Miners hash
+    # Miners json data
     @@miners = nil
     
-    # Workers hash
+    # Workers json data
     @@workers = nil
+    
+    # Triggers json data
+    @@triggers = nil
+    
+    # Actions json data
+    @@actions = nil
+    
+    # Applications json data
+    @@applications = nil
 
     def self.loadConfig(cfgfile)
         # Read main file
@@ -35,22 +47,27 @@ module Config
         # Make sure it loaded
         if (json != nil)
             @@settings = json[:settings]
-            @@algorithms = self.loadJson(json[:algorithms], CFG_VERSION_ALGORITHMS)[:algorithms]
-            @@miners = self.loadJson(json[:miners], CFG_VERSION_MINERS)[:miners]
-            
-            @@workers = {}
-            json[:workers].each { |workerFile|
-                self.loadJson(workerFile, CFG_VERSION_WORKERS)[:workers].each { |id, worker|
-                    @@workers[id.to_s] = worker
-                }
-            }
-            if (@@workers.empty?)
-                @@logger.warn "No workers loaded, please check your config"
-            end
+            @@algorithms = self.loadJsons(json[:algorithms], :algorithms, CFG_VERSION_ALGORITHMS)
+            @@miners = self.loadJsons(json[:miners], :miners, CFG_VERSION_MINERS)
+            @@triggers = self.loadJsons(json[:triggers], :triggers, CFG_VERSION_TRIGGERS)
+            @@actions = self.loadJsons(json[:actions], :actions, CFG_VERSION_ACTIONS)
+            @@applications = self.loadJsons(json[:applications], :applications, CFG_VERSION_APPLICATIONS)
+            @@workers = self.loadJsons(json[:workers], :workers, CFG_VERSION_WORKERS)
         end
         
         # Make sure it loaded
-        return @@settings != nil && @@algorithms != nil && @@miners != nil && @@workers != nil
+        return !@@settings.empty? && !@@algorithms.empty? && !@@miners.empty? && !@@workers.empty? && !@@triggers.empty? && !@@actions.empty? && !@@applications.empty? && !@@workers.empty?
+    end
+    
+    def self.loadJsons(paths, sharedField, expectedVersion = CFG_VERSION_DEFAULT)
+            hash = {}
+            paths.each {|path|
+                json = self.loadJson(path, expectedVersion)
+                json[sharedField].each { |id, entry|
+                    hash[id] = entry
+                }
+            }
+            return hash
     end
     
     def self.loadJson(path, expectedVersion = CFG_VERSION_DEFAULT)
@@ -70,21 +87,21 @@ module Config
                         # It's good!
                         return json
                     else
-                        @@logger.fatal("Outdated config file '#{path}', please update it.")
+                        Config.logger.fatal("Outdated config file '#{path}', please update it.")
                     end
                 else
-                    @@logger.fatal("Malformed config file '#{path}', check your JSON.")
+                    Config.logger.fatal("Malformed config file '#{path}', check your JSON.")
                 end
             rescue JSON::ParserError => ex
-                @@logger.fatal("JSON errors in '#{path}'.")
+                Config.logger.fatal("JSON errors in '#{path}'.")
                 
                 # Print specific JSON error
                 if (ex != nil)
-                    @@logger.fatal ex.message.gsub(/[\r\n]/, "\\n");
+                    Config.logger.fatal ex.message.gsub(/[\r\n]/, "\\n");
                 end
             end
         else
-            @@logger.fatal("Unable to access config file '#{path}'.")
+            Config.logger.fatal("Unable to access config file '#{path}'.")
         end
         
         # Return nil on error
@@ -105,5 +122,24 @@ module Config
     
     def self.workers()
         return @@workers
+    end
+    
+    def self.triggers()
+        return @@triggers
+    end
+    
+    def self.actions()
+        return @@actions
+    end
+    
+    def self.applications()
+        return @@applications
+    end
+    
+    def self.logger()
+        if (@@logger == nil)
+            @@logger = Log.createLogger("Log")
+        end
+        return @@logger
     end
 end

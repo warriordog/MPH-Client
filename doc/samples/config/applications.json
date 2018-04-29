@@ -1,0 +1,25 @@
+{
+  "config_version": 0,
+  "applications": {
+    "xmr-stak": {
+      "workingDir": "miners/xmr-stak",
+      "executable": "./xmr-stak.exe",
+      "args": "--noAMD --noNVIDIA --noUAC --currency $(JOB.COIN.ID) -O $(JOB.HOST) -u $(JOB.WORKER.USERNAME) -p z"
+    },
+    "ccminer": {
+      "workingDir": "miners/ccminer",
+      "executable": "./ccminer.exe",
+      "args": "-r 0 -T $(CONFIG.NETWORK_TIMEOUT) -a $(JOB.COIN.ALGO) -o stratum+tcp://$(JOB.HOST) -u $(JOB.WORKER.USERNAME) -p z"
+    },
+    "ethminer": {
+      "workingDir": "miners/ethminer",
+      "executable": "./ethminer.exe",
+      "args": ""
+    },
+    "ping_test": {
+      "workingDir": "./",
+      "executable": "ping",
+      "args": "$(PING.HOST)"
+    }
+  }
+}
