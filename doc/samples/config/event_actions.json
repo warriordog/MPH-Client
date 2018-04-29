@@ -84,6 +84,13 @@
     "resume_mining": {
       "action_id": "resume_mining",
       "args": {}
+    },
+    "log_timeout_15": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Timer 15s triggered for $(WORKER.ID)."
+      }
     }
   }
 }

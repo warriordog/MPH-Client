@@ -159,45 +159,43 @@ module Triggers
 	
 	# Trigger that activates on a timer
 	class TimerTrigger < Trigger
-		# Inner data structure for storing workers that are listening to the timer
-		class WorkerData
-			def initialize(worker, event)
-				@worker = worker
-				@event = event
-			end
-			
-			attr_accessor :worker, :event
-		end
-	
 		def initialize(id, triggerId, filters)
 			super(id, triggerId, filters)
 			
-			# List of workers who are waiting for this timer
-			@workers = []
-			
 			# Get interval
 			if (filters.include? :interval)
-				interval = Float(filters[:interval])
-				if (interval != nil)
-					# Thread that loops until program ends
-					@thread = Thread.new {
+				@interval = Float(filters[:interval])
+				if (@interval == nil)
+					Triggers.logger.warn "Invalid timer interval: #{filters[:interval]}"
+				end
+			else
+				@interval = nil
+				Triggers.logger.warn "Timer triggers require an interval"
+			end
+		end
+		
+		# Add this trigger to a worker
+		def addToWorker(worker, event)
+			if (@interval != nil)
+				Triggers.logger.debug {"Attching worker '#{worker.id}' to timer '#{id}'"}
+				
+				# Wait for start event
+				worker.addListener(:startup, self) {
+					Triggers.logger.debug {"Timer '#{@id}' activated."}
+				
+					# Create timer thread
+					Thread.new {
 						while (true)
 							begin
-								# Keep commented unless debugging to avoid log spam
-								#Triggers.logger.debug {"Timer fired"}
+								# Wait for interval
+								sleep @interval
 								
-								# Fire events
-								@workers.each {|data|
-									# Create variable data
-									vars = {'TIMER.ID' => @id}
-									data.worker.injectGlobalVars(vars)
-									
-									# fire event
-									data.event.fire(data.worker, vars)
-								}
+								# Create variable data
+								vars = {'TIMER.ID' => @id}
+								worker.injectGlobalVars(vars)
 								
-								# Wait for next interval
-								sleep interval
+								# fire event
+								event.fire(worker, vars)
 							rescue Exception => e
 								Triggers.logger.error "Exception in timer thread"
 								Triggers.logger.error e
@@ -205,96 +203,73 @@ module Triggers
 							end
 						end
 					}
-				else
-					@thread = nil
-					Triggers.logger.warn "Invalid timer interval: #{filters[:interval]}"
-				end
+				}
 			else
-				@thread = nil
-				Triggers.logger.warn "Timer triggers require an interval"
+			
 			end
-		end
-		
-		# Add this trigger to a worker
-		def addToWorker(worker, event)
-			Triggers.logger.debug {"Attching worker '#{worker.id}' to timer '#{id}'"}
-			@workers << WorkerData.new(worker, event)
 		end
 		
 		# Remove this trigger from a worker
 		def removeFromWorker(worker)
 			Triggers.logger.debug {"Removing worker '#{worker.id}' from timer '#{id}'"}
-			@workers.remove_if {|data| data.worker == worker}
+			worker.removeListener(self)
 		end
 	end
 	
-	# Trigger that activates after a timeout
+	# Trigger that activates on a timeout
 	class TimeoutTrigger < Trigger
-		# Inner data structure for storing workers that are waiting for timeout
-		class WorkerData
-			def initialize(worker, event)
-				@worker = worker
-				@event = event
-			end
-			
-			attr_accessor :worker, :event
-		end
-	
 		def initialize(id, triggerId, filters)
 			super(id, triggerId, filters)
 			
-			# List of workers who are waiting for this timer
-			@workers = []
-			
 			# Get delay
 			if (filters.include? :delay)
-				delay = Float(filters[:delay])
-				if (delay != nil)
-					# Thread that waits for timeout
-					@thread = Thread.new {
-					
-						# Wait for timeout
-						sleep delay
-						
-						# Keep commented unless debugging to avoid log spam
-						#Triggers.logger.debug {"Timeout fired"}
-						
-						# Fire events
-						@workers.each {|data|
-							begin
-								# Create variable data
-								vars = {'TIMEOUT.ID' => @id}
-								data.worker.injectGlobalVars(vars)
-								
-								# fire event
-								data.event.fire(data.worker, vars)
-							rescue Exception => e
-								Triggers.logger.error "Exception in timeout thread"
-								Triggers.logger.error e
-								Triggers.logger.error e.backtrace.join("\n\t")
-							end
-						}
-					}
-				else
-					@thread = nil
-					Triggers.logger.warn "Invalid timeout delay: #{filters[:delay]}"
+				@delay = Float(filters[:delay])
+				if (@delay == nil)
+					Triggers.logger.warn "Invalid timer delay: #{filters[:delay]}"
 				end
 			else
-				@thread = nil
-				Triggers.logger.warn "Timeout triggers require a delay"
+				@delay = nil
+				Triggers.logger.warn "Timer triggers require an delay"
 			end
 		end
 		
 		# Add this trigger to a worker
 		def addToWorker(worker, event)
-			Triggers.logger.debug {"Attching worker '#{worker.id}' to timeout '#{id}'"}
-			@workers << WorkerData.new(worker, event)
+			if (@delay != nil)
+				Triggers.logger.debug {"Attching worker '#{worker.id}' to timeout '#{id}'"}
+				
+				# Wait for start event
+				worker.addListener(:startup, self) {
+					Triggers.logger.debug {"Timeout '#{@id}' activated."}
+				
+					# Create timeout thread
+					Thread.new {
+						begin
+							# Wait for delay
+							sleep @delay
+							
+							# Create variable data
+							vars = {'TIMEOUT.ID' => @id}
+							worker.injectGlobalVars(vars)
+							
+							# fire event
+							event.fire(worker, vars)
+						rescue Exception => e
+							Triggers.logger.error "Exception in timeout thread"
+							Triggers.logger.error e
+							Triggers.logger.error e.backtrace.join("\n\t")
+						end
+					}
+				}
+			else
+			
+			end
 		end
 		
 		# Remove this trigger from a worker
 		def removeFromWorker(worker)
 			Triggers.logger.debug {"Removing worker '#{worker.id}' from timeout '#{id}'"}
-			@workers.remove_if {|data| data.worker == worker}
+			worker.removeListener(self)
 		end
 	end
 	
