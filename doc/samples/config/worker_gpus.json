@@ -1,5 +1,5 @@
 {
-  "config_version": 7,
+  "config_version": 8,
   "workers": {
     "gpus_nvidia": {
       "name": "NVIDIA GPUs",

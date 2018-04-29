@@ -63,7 +63,7 @@ module MPHClient
     
     def self.start()
         # Print version
-        @@rootLog.info("MPH-Client v0.1.1 (development)")
+        @@rootLog.info("MPH-Client v0.2.0 (development)")
 
         # Load config
         if (ARGV.length > 0)
