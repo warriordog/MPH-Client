@@ -37,6 +37,8 @@ module Triggers
 					return AlgoSwitchTrigger.new(id, triggerId, json[:filters])
 				when "timer"
 					return TimerTrigger.new(id, triggerId, json[:filters])
+				when "timeout"
+					return TimeoutTrigger.new(id, triggerId, json[:filters])
 				else
 					Triggers.logger.warn "Unkown trigger id '#{triggerId}' for trigger '#{id}'.  It will not be created."
 				end
@@ -222,6 +224,76 @@ module Triggers
 		# Remove this trigger from a worker
 		def removeFromWorker(worker)
 			Triggers.logger.debug {"Removing worker '#{worker.id}' from timer '#{id}'"}
+			@workers.remove_if {|data| data.worker == worker}
+		end
+	end
+	
+	# Trigger that activates after a timeout
+	class TimeoutTrigger < Trigger
+		# Inner data structure for storing workers that are waiting for timeout
+		class WorkerData
+			def initialize(worker, event)
+				@worker = worker
+				@event = event
+			end
+			
+			attr_accessor :worker, :event
+		end
+	
+		def initialize(id, triggerId, filters)
+			super(id, triggerId, filters)
+			
+			# List of workers who are waiting for this timer
+			@workers = []
+			
+			# Get delay
+			if (filters.include? :delay)
+				delay = Float(filters[:delay])
+				if (delay != nil)
+					# Thread that waits for timeout
+					@thread = Thread.new {
+					
+						# Wait for timeout
+						sleep delay
+						
+						# Keep commented unless debugging to avoid log spam
+						#Triggers.logger.debug {"Timeout fired"}
+						
+						# Fire events
+						@workers.each {|data|
+							begin
+								# Create variable data
+								vars = {'TIMEOUT.ID' => @id}
+								data.worker.injectGlobalVars(vars)
+								
+								# fire event
+								data.event.fire(data.worker, vars)
+							rescue Exception => e
+								Triggers.logger.error "Exception in timeout thread"
+								Triggers.logger.error e
+								Triggers.logger.error e.backtrace.join("\n\t")
+							end
+						}
+					}
+				else
+					@thread = nil
+					Triggers.logger.warn "Invalid timeout delay: #{filters[:delay]}"
+				end
+			else
+				@thread = nil
+				Triggers.logger.warn "Timeout triggers require a delay"
+			end
+		end
+		
+		# Add this trigger to a worker
+		def addToWorker(worker, event)
+			Triggers.logger.debug {"Attching worker '#{worker.id}' to timeout '#{id}'"}
+			@workers << WorkerData.new(worker, event)
+		end
+		
+		# Remove this trigger from a worker
+		def removeFromWorker(worker)
+			Triggers.logger.debug {"Removing worker '#{worker.id}' from timeout '#{id}'"}
 			@workers.remove_if {|data| data.worker == worker}
 		end
 	end

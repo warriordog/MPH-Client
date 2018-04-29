@@ -27,6 +27,14 @@
         {
           "trigger": "coin_switch",
           "action": "log_switch_coin"
+        },
+        {
+          "trigger": "worker_startup",
+          "action": "pause_mining"
+        },
+        {
+          "trigger": "timeout_15s",
+          "action": "resume_mining"
         }
       ]
     },
