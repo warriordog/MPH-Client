@@ -1,4 +1,4 @@
-require 'miner/events'
+require 'miner/event/events'
 
 # Actions module
 module Actions

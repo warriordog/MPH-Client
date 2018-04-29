@@ -10,8 +10,8 @@ require 'miner/worker'
 require 'miner/coins'
 require 'miner/miners'
 require 'api/mph'
-require 'miner/triggers'
-require 'miner/actions'
+require 'miner/event/triggers'
+require 'miner/event/actions'
 require 'util/application'
 
 module MPHClient

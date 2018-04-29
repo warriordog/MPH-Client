@@ -1,4 +1,4 @@
-require 'miner/events' 
+require 'miner/event/events' 
 
 # Triggers module
 module Triggers

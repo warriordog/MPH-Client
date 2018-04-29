@@ -6,8 +6,8 @@ require 'config'
 require 'util/log'
 require 'miner/coins'
 require 'miner/miners' 
-require 'miner/events'
-require 'miner/triggers'
+require 'miner/event/events'
+require 'miner/event/triggers'
 require 'util/application'
 
 module Wkr
