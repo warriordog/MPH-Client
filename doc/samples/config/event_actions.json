@@ -43,6 +43,35 @@
         "message": "Worker $(WORKER.ID) has stopped mining."
       }
     },
+    "pause_mining": {
+      "action_id": "pause_mining",
+      "args": {}
+    },
+    "resume_mining": {
+      "action_id": "resume_mining",
+      "args": {}
+    },
+    "log_timer_1": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Timer 1s triggered for $(WORKER.ID)."
+      }
+    },
+    "log_timeout_15": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Timer 15s triggered for $(WORKER.ID)."
+      }
+    },
+    "log_custom": {
+      "action_id": "log_custom",
+      "args": {
+        "name": "Custom_Logger",
+        "message": "This is a custom logger fired from $(WORKER.ID)."
+      }
+    },
     "run_ping_google": {
       "action_id": "exec_app",
       "args": {
@@ -61,50 +90,6 @@
           "workingDir": "./",
           "args": "www.google.com"
         }
-      }
-    },
-    "log_timer_1": {
-      "action_id": "log",
-      "args": {
-        "severity": "INFO",
-        "message": "Timer 1s triggered for $(WORKER.ID)."
-      }
-    },
-    "log_timer_30": {
-      "action_id": "log",
-      "args": {
-        "severity": "INFO",
-        "message": "Timer 30.5s triggered for $(WORKER.ID)."
-      }
-    },
-    "pause_mining": {
-      "action_id": "pause_mining",
-      "args": {}
-    },
-    "resume_mining": {
-      "action_id": "resume_mining",
-      "args": {}
-    },
-    "log_timeout_15": {
-      "action_id": "log",
-      "args": {
-        "severity": "INFO",
-        "message": "Timer 15s triggered for $(WORKER.ID)."
-      }
-    },
-    "log_custom_a": {
-      "action_id": "log_custom",
-      "args": {
-        "name": "Logger_A",
-        "message": "Logger A fired for $(WORKER.ID)."
-      }
-    },
-    "log_custom_b": {
-      "action_id": "log_custom",
-      "args": {
-        "name": "Logger_B",
-        "message": "Logger B fired for $(WORKER.ID).",
-        "severity": "WARN"
       }
     }
   }

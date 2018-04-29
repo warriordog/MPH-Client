@@ -148,9 +148,11 @@ module Application
                             }
 
                         end
-                    rescue e
+                    rescue Errno::ENOENT => e
+                        @app.logger.fatal "Unable to run application: #{e.message()}"
+                    rescue Exception => e
                         @app.logger.error "Exception starting process."
-                        @app.logger.error e.message()
+                        @app.logger.error "#{e.class}: #{e.message()}"
                         @app.logger.error e.backtrace.join("\n\t")
                     end
                 else
