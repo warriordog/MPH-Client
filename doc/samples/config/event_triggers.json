@@ -31,10 +31,10 @@
         "interval": "1.0"
       }
     },
-    "timer_30s": {
+    "timer_15s": {
       "trigger_id": "timer",
       "filters": {
-        "interval": "30"
+        "interval": "15"
       }
     },
     "timeout_15s": {

@@ -54,6 +54,9 @@ module Actions
                 # Resume mining
                 when "resume_mining"
                     return ActionResume.new(id, action, args)
+                # Log a custom action
+                when "log_custom"
+                    return ActionLogCustom.new(id, action, args)
                 else
                     Actions.logger.warn {"Unkown action id '#{action}' for action '#{id}'.  It will not be created."}
                     
@@ -212,6 +215,69 @@ module Actions
         end
     end
     
+	# Action for logging a string with a custom logger
+    class ActionLogCustom < Action
+        def initialize(id, actionId, args)
+            super(id, actionId, args)
+            
+            # Make sure args are valid
+            if (args.include?(:name) && args.include?(:message))
+				# create logger
+				toF = ((!args.include? :toFile) || (args[:toFile]))
+				toC = ((!args.include? :toConsole) || (args[:toConsole]))
+				logger = Log.createLogger(args[:name], toFile: toF, toConsole: toC)
+            
+                # logger severity (converted to upper case)
+				if (args.include? :severity)
+					severity = Logger::Severity.const_get(args[:severity].upcase)
+				else
+					severity = Logger::INFO
+				end
+				
+				# Make sure severity was valid
+                if (severity != nil)
+                
+                    # logger message
+                    message = args[:message]
+                    
+                    # setup lambda to log
+                    @logFunc = lambda {|worker, vars|
+                    
+                        # Fill in variables
+                        currentMessage = Args.injectArgs(message, vars, logger) {|key, value|
+                            # Print out nil correctly
+                            if (value == nil)
+                                "nil"
+                            # Print out floats in a reasonable way
+                            elsif (value.is_a? Float)
+                                "%0.8f" % [value]
+                            # Print out normally
+                            else
+                                value.to_s
+                            end
+                        }
+
+                        # Finally print message 
+                        logger.log(severity, currentMessage)
+                    }
+                else
+                    # empty lambda
+                    @logFunc = lambda {}
+                    Actions.logger.warn "Invalid logger severity: #{args[:severity]}"
+                end
+            else
+                # empty lambda
+                @logFunc = lambda {}
+                Actions.logger.warn "Event action '#{actionId}' in action '#{id}' is missing required argument(s) 'name', 'message' and will be disabled."
+            end
+        end
+        
+        # Override
+        def execute(worker, vars)
+            @logFunc.call(worker, vars)
+        end
+    end
+	
     # Gets the events logger
     def self.logger()
         return @@logger

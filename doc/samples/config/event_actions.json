@@ -91,6 +91,21 @@
         "severity": "INFO",
         "message": "Timer 15s triggered for $(WORKER.ID)."
       }
+    },
+    "log_custom_a": {
+      "action_id": "log_custom",
+      "args": {
+        "name": "Logger_A",
+        "message": "Logger A fired for $(WORKER.ID)."
+      }
+    },
+    "log_custom_b": {
+      "action_id": "log_custom",
+      "args": {
+        "name": "Logger_B",
+        "message": "Logger B fired for $(WORKER.ID).",
+        "severity": "WARN"
+      }
     }
   }
 }
