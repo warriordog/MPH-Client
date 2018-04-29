@@ -47,7 +47,13 @@ module Actions
                     return ActionRun.new(id, action, args)              
                 # Exec any action
                 when "exec_any"
-                    return ActionExec.new(id, action, args)
+                    return ActionExec.new(id, action, args)             
+                # Pause mining
+                when "pause_mining"
+                    return ActionPause.new(id, action, args)
+                # Resume mining
+                when "resume_mining"
+                    return ActionResume.new(id, action, args)
                 else
                     Actions.logger.warn {"Unkown action id '#{action}' for action '#{id}'.  It will not be created."}
                     
@@ -181,6 +187,28 @@ module Actions
                     exec.waitForTerminate()
                 end
             end
+        end
+    end
+    
+    # Action for pausing mining
+    class ActionPause < Action
+        def initialize(id, actionId, args)
+            super(id, actionId, args)
+        end
+        
+        def execute(worker, vars)
+            worker.pauseMining()
+        end
+    end
+    
+    # Action for resuming mining
+    class ActionResume < Action
+        def initialize(id, actionId, args)
+            super(id, actionId, args)
+        end
+        
+        def execute(worker, vars)
+            worker.resumeMining()
         end
     end
     

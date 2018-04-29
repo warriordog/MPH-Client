@@ -76,6 +76,14 @@
         "severity": "INFO",
         "message": "Timer 30.5s triggered for $(WORKER.ID)."
       }
+    },
+    "pause_mining": {
+      "action_id": "pause_mining",
+      "args": {}
+    },
+    "resume_mining": {
+      "action_id": "resume_mining",
+      "args": {}
     }
   }
 }

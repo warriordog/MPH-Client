@@ -127,6 +127,14 @@ module Wkr
                 @executor.stop()
             end
         end
+		
+		def pause()
+			self.stop()
+		end
+		
+		def resume()
+			self.start()
+		end
     end
     
     class Host
@@ -159,10 +167,13 @@ module Wkr
 			
 			# map of symbol id -> map of (id object -> proc)
 			@listeners = Hash.new { |h, k| h[k] = {} } # hash default values are unique hashes
+			
+			# If true, don't mine
+			@paused = false
         end
         
         # Add getters
-        attr_reader :name, :id, :profitField, :algos, :logger, :currentJob, :events
+        attr_reader :name, :id, :profitField, :algos, :logger, :currentJob, :events, :paused
         
         # Find the profit for a specified coin
         def calcProfit(statCoin)
@@ -334,6 +345,24 @@ module Wkr
 			
 			# Detach triggers
 			@events.each {|event| event.trigger.removeFromWorker(self)}
+		end
+		
+		# Pauses mining
+		def pauseMining()
+			@logger.debug "Pausing mining."
+			@paused = true
+			if (@currentJob != nil)
+				@currentJob.pause
+			end
+		end
+		
+		# Resumes paused mining
+		def resumeMining()
+			@logger.debug "Resuming mining."
+			@paused = false
+			if (@currentJob != nil)
+				@currentJob.resume
+			end
 		end
 		
 		# Gets a set of context variables for an app
