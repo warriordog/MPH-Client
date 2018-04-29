@@ -4,10 +4,10 @@
 
 require 'config'
 require 'util/log'
-#require 'miner/executor'
 require 'miner/coins'
 require 'miner/miners' 
-require 'miner/event'
+require 'miner/events'
+require 'miner/triggers'
 require 'util/application'
 
 module Wkr
