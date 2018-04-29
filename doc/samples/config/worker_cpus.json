@@ -19,7 +19,7 @@
       "events": [
         {
           "trigger": "coin_switch",
-          "action": "log_switch"
+          "action": "log_switch_coin"
         }
       ]
     }

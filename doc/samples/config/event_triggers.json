@@ -20,6 +20,10 @@
     "stop_mining": {
       "trigger_id": "stop_mining",
       "filters": {}
+    },
+    "algo_switch": {
+      "trigger_id": "switch_algorithm",
+      "filters": {}
     }
   }
 }

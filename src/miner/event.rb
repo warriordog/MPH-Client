@@ -225,6 +225,8 @@ module Events
 					return StartMiningTrigger.new(id, triggerId, json[:filters])
 				when "stop_mining"
 					return StopMiningTrigger.new(id, triggerId, json[:filters])
+				when "switch_algorithm"
+					return AlgoSwitchTrigger.new(id, triggerId, json[:filters])
 				else
 					Events.logger.warn "Unkown trigger id '#{triggerId}' for trigger '#{id}'.  It will not be created."
 				end
@@ -320,6 +322,18 @@ module Events
 		# Override
 		def prepareVars(worker, vars)
 			Events.logger.debug {"Activating stop mining trigger on '#{worker.id}'"}
+		end
+	end
+	
+	# Trigger that activates when worker switches algorithm
+	class AlgoSwitchTrigger < WorkerTrigger
+		def initialize(id, triggerId, filters)
+			super(id, triggerId, filters, :switch_algo)
+		end
+		
+		# Override
+		def prepareVars(worker, vars)
+			Events.logger.debug {"Activating algo switch trigger on '#{worker.id}'"}
 		end
 	end
 	

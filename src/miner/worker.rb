@@ -272,8 +272,12 @@ module Wkr
 						
 						# Fire coin switch event
 						fireEvent(:switch_coin, {'TASK.LAST_COIN.ID' => lastCoin&.id, 'TASK.LAST_COIN.ALGO' => lastCoin&.algorithm&.id})
+						
+						# Fire algo switch event
+						if (lastCoin == nil || lastCoin.algorithm != @currentJob.coin.algorithm)
+							fireEvent(:switch_algo, {'TASK.LAST_COIN.ALGO' => lastCoin&.algorith&.id})
+						end
 					
-						# Fire mining start event
 						# lastCoin is nil if there was no previous job
 						if (lastCoin == nil)
 							fireEvent(:start_mining, {})
