@@ -21,9 +21,9 @@ module MPHClient
     def self.runMainLoop(workers)
         running = true
 
-		# Startup workers
-		workers.each {|worker| worker.startup()}
-		
+        # Startup workers
+        workers.each {|worker| worker.startup()}
+        
         # setup coin change timer
         timerThread = Thread.new {
             logger = Log.createLogger("SwitchTimer")
@@ -51,14 +51,14 @@ module MPHClient
                 end
             end
         }
-		
+        
         # add new stuff here
         
         # Wait for all threads to end
         timerThread.join()
         
-		# Shut down workers
-		workers.each {|worker| worker.shutdown()}
+        # Shut down workers
+        workers.each {|worker| worker.shutdown()}
     end
     
     def self.start()
@@ -78,19 +78,19 @@ module MPHClient
                         # Create "real" root logger
                         @@rootLog = Log.createLogger("root")
                     
-						# Load applications
-						Application.loadApps()
-					
+                        # Load applications
+                        Application.loadApps()
+                    
                         # Load coins and algorithms
                         Coins.loadAlgorithms()
                     
                         # Load miners
                         Miners.loadMiners()
                     
-						# Load event actions and triggers
-						Triggers.loadTriggers()
-						Actions.loadActions()
-					
+                        # Load event actions and triggers
+                        Triggers.loadTriggers()
+                        Actions.loadActions()
+                    
                         # Load workers
                         workers = Wkr.loadWorkers()
                         

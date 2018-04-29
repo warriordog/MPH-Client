@@ -30,13 +30,13 @@ module Config
     
     # Workers json data
     @@workers = nil
-	
+    
     # Triggers json data
     @@triggers = nil
-	
+    
     # Actions json data
     @@actions = nil
-	
+    
     # Applications json data
     @@applications = nil
 
@@ -52,7 +52,7 @@ module Config
             @@triggers = self.loadJson(json[:triggers], CFG_VERSION_TRIGGERS)[:triggers]
             @@actions = self.loadJson(json[:actions], CFG_VERSION_ACTIONS)[:actions]
             @@applications = self.loadJson(json[:applications], CFG_VERSION_APPLICATIONS)[:applications]
-			
+            
             @@workers = {}
             json[:workers].each { |workerFile|
                 self.loadJson(workerFile, CFG_VERSION_WORKERS)[:workers].each { |id, worker|

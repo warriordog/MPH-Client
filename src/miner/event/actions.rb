@@ -215,26 +215,26 @@ module Actions
         end
     end
     
-	# Action for logging a string with a custom logger
+    # Action for logging a string with a custom logger
     class ActionLogCustom < Action
         def initialize(id, actionId, args)
             super(id, actionId, args)
             
             # Make sure args are valid
             if (args.include?(:name) && args.include?(:message))
-				# create logger
-				toF = ((!args.include? :toFile) || (args[:toFile]))
-				toC = ((!args.include? :toConsole) || (args[:toConsole]))
-				logger = Log.createLogger(args[:name], toFile: toF, toConsole: toC)
+                # create logger
+                toF = ((!args.include? :toFile) || (args[:toFile]))
+                toC = ((!args.include? :toConsole) || (args[:toConsole]))
+                logger = Log.createLogger(args[:name], toFile: toF, toConsole: toC)
             
                 # logger severity (converted to upper case)
-				if (args.include? :severity)
-					severity = Logger::Severity.const_get(args[:severity].upcase)
-				else
-					severity = Logger::INFO
-				end
-				
-				# Make sure severity was valid
+                if (args.include? :severity)
+                    severity = Logger::Severity.const_get(args[:severity].upcase)
+                else
+                    severity = Logger::INFO
+                end
+                
+                # Make sure severity was valid
                 if (severity != nil)
                 
                     # logger message
@@ -277,7 +277,7 @@ module Actions
             @logFunc.call(worker, vars)
         end
     end
-	
+    
     # Gets the events logger
     def self.logger()
         return @@logger
