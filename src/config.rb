@@ -47,25 +47,27 @@ module Config
         # Make sure it loaded
         if (json != nil)
             @@settings = json[:settings]
-            @@algorithms = self.loadJson(json[:algorithms], CFG_VERSION_ALGORITHMS)[:algorithms]
-            @@miners = self.loadJson(json[:miners], CFG_VERSION_MINERS)[:miners]
-            @@triggers = self.loadJson(json[:triggers], CFG_VERSION_TRIGGERS)[:triggers]
-            @@actions = self.loadJson(json[:actions], CFG_VERSION_ACTIONS)[:actions]
-            @@applications = self.loadJson(json[:applications], CFG_VERSION_APPLICATIONS)[:applications]
-            
-            @@workers = {}
-            json[:workers].each { |workerFile|
-                self.loadJson(workerFile, CFG_VERSION_WORKERS)[:workers].each { |id, worker|
-                    @@workers[id.to_s] = worker
-                }
-            }
-            if (@@workers.empty?)
-                Config.logger.warn "No workers loaded, please check your config"
-            end
+            @@algorithms = self.loadJsons(json[:algorithms], :algorithms, CFG_VERSION_ALGORITHMS)
+            @@miners = self.loadJsons(json[:miners], :miners, CFG_VERSION_MINERS)
+            @@triggers = self.loadJsons(json[:triggers], :triggers, CFG_VERSION_TRIGGERS)
+            @@actions = self.loadJsons(json[:actions], :actions, CFG_VERSION_ACTIONS)
+            @@applications = self.loadJsons(json[:applications], :applications, CFG_VERSION_APPLICATIONS)
+            @@workers = self.loadJsons(json[:workers], :workers, CFG_VERSION_WORKERS)
         end
         
         # Make sure it loaded
-        return @@settings != nil && @@algorithms != nil && @@miners != nil && @@workers != nil && @@triggers != nil && @@actions != nil && @@applications != nil
+        return !@@settings.empty? && !@@algorithms.empty? && !@@miners.empty? && !@@workers.empty? && !@@triggers.empty? && !@@actions.empty? && !@@applications.empty? && !@@workers.empty?
+    end
+    
+    def self.loadJsons(paths, sharedField, expectedVersion = CFG_VERSION_DEFAULT)
+            hash = {}
+            paths.each {|path|
+                json = self.loadJson(path, expectedVersion)
+                json[sharedField].each { |id, entry|
+                    hash[id] = entry
+                }
+            }
+            return hash
     end
     
     def self.loadJson(path, expectedVersion = CFG_VERSION_DEFAULT)
