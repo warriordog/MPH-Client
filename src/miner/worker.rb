@@ -268,9 +268,7 @@ module Wkr
                     
                     # Start mining only if the task parameters have changed
                     if (@currentJob == nil || !@currentJob.same?(wkrAlgo.algorithm, coin, miner, host))
-                        # start job
-                        @logger.info("Switching to #{coinName}")
-                        
+                    
                         # Stop current job, if there is one
                         if (@currentJob != nil)
                             @currentJob.stop()

@@ -19,14 +19,14 @@
       "action_id": "log",
       "args": {
         "severity": "INFO",
-        "message": "Worker $(WORKER.ID) is switching coins to $(TASK.COIN.ID) ($(TASK.COIN.ALGO)) on $(TASK.MINER.ID).  Estimated earnings: $(TASK.PROFIT) BTC/day."
+        "message": "Worker is switching coins to $(TASK.COIN.ID) ($(TASK.COIN.ALGO)) on $(TASK.MINER.ID).  Estimated earnings: $(TASK.PROFIT) BTC/day."
       }
     },
     "log_switch_algo": {
       "action_id": "log",
       "args": {
         "severity": "INFO",
-        "message": "Worker $(WORKER.ID) is switching algorithms to $(TASK.COIN.ALGO)."
+        "message": "Worker is switching algorithms to $(TASK.COIN.ALGO)."
       }
     },
     "log_start_mining": {
