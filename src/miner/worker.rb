@@ -108,10 +108,12 @@ module Wkr
         attr_reader :worker, :algorithm, :coin, :miner, :executor, :host, :hashrate, :profit
         
         def start()
-			context = @worker.getAppEnvironment()
-		
-            # Run algorithm
-            @executor.start(context)
+			if (!@worker.paused)
+				context = @worker.getAppEnvironment()
+			
+				# Run algorithm
+				@executor.start(context)
+			end
         end
         
         def running?()
