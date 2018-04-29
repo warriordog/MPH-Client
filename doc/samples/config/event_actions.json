@@ -62,6 +62,20 @@
           "args": "www.google.com"
         }
       }
+    },
+    "log_timer_1": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Timer 1s triggered for $(WORKER.ID)."
+      }
+    },
+    "log_timer_30": {
+      "action_id": "log",
+      "args": {
+        "severity": "INFO",
+        "message": "Timer 30.5s triggered for $(WORKER.ID)."
+      }
     }
   }
 }

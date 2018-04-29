@@ -351,14 +351,8 @@ module Wkr
 			}
 		end
 		
-		# Fires an event with the specified variables
-		def fireEvent(eventId, vars)
-			# Vars cannot be nil
-			if (vars == nil)
-				vars = {}
-			end
-		
-			# Add global vars
+		# Adds global vars to a hash
+		def injectGlobalVars(vars)
 			vars['WORKER.ID'] = @id
 			
 			if (@currentJob != nil) 
@@ -371,6 +365,17 @@ module Wkr
 			else
 				vars['TASK.ACTIVE'] = false
 			end
+		end
+		
+		# Fires an event with the specified variables
+		def fireEvent(eventId, vars)
+			# Vars cannot be nil
+			if (vars == nil)
+				vars = {}
+			end
+		
+			# Add common, always-present variables
+			injectGlobalVars(vars)
 		
 			@listeners[eventId].each {|id, block|
 				block.call(self, vars)

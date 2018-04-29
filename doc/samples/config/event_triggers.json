@@ -24,6 +24,18 @@
     "algo_switch": {
       "trigger_id": "switch_algorithm",
       "filters": {}
+    },
+    "timer_1s": {
+      "trigger_id": "timer",
+      "filters": {
+        "interval": "1.0"
+      }
+    },
+    "timer_30.5s": {
+      "trigger_id": "timer",
+      "filters": {
+        "interval": "30.5"
+      }
     }
   }
 }

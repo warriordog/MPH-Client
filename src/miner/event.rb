@@ -227,6 +227,8 @@ module Events
 					return StopMiningTrigger.new(id, triggerId, json[:filters])
 				when "switch_algorithm"
 					return AlgoSwitchTrigger.new(id, triggerId, json[:filters])
+				when "timer"
+					return TimerTrigger.new(id, triggerId, json[:filters])
 				else
 					Events.logger.warn "Unkown trigger id '#{triggerId}' for trigger '#{id}'.  It will not be created."
 				end
@@ -235,6 +237,14 @@ module Events
 			end
 			
 			return nil
+		end
+		
+		# Add this trigger to a worker
+		def addToWorker(worker, event)
+		end
+		
+		# Remove this trigger from a worker
+		def removeFromWorker(worker)
 		end
 	end
 
@@ -334,6 +344,77 @@ module Events
 		# Override
 		def prepareVars(worker, vars)
 			Events.logger.debug {"Activating algo switch trigger on '#{worker.id}'"}
+		end
+	end
+	
+	# Trigger that activates on a timer
+	class TimerTrigger < Trigger
+		# Inner data structure for storing workers that are listening to the timer
+		class WorkerData
+			def initialize(worker, event)
+				@worker = worker
+				@event = event
+			end
+			
+			attr_accessor :worker, :event
+		end
+	
+		def initialize(id, triggerId, filters)
+			super(id, triggerId, filters)
+			
+			# List of workers who are waiting for this timer
+			@workers = []
+			
+			# Get interval
+			if (filters.include? :interval)
+				interval = Float(filters[:interval])
+				if (interval != nil)
+					# Thread that loops until program ends
+					@thread = Thread.new {
+						while (true)
+							begin
+								# Keep commented unless debugging to avoid log spam
+								#Events.logger.debug {"Timer fired"}
+								
+								# Fire events
+								@workers.each {|data|
+									# Create variable data
+									vars = {'TIMER.ID' => @id}
+									data.worker.injectGlobalVars(vars)
+									
+									# fire event
+									data.event.fire(data.worker, vars)
+								}
+								
+								# Wait for next interval
+								sleep interval
+							rescue Exception => e
+								Events.logger.error "Exception in timer thread"
+								Events.logger.error e
+								Events.logger.error e.backtrace.join("\n\t")
+							end
+						end
+					}
+				else
+					@thread = nil
+					Events.logger.warn "Invalid timer interval: #{filters[:interval]}"
+				end
+			else
+				@thread = nil
+				Events.logger.warn "Timer triggers require an interval"
+			end
+		end
+		
+		# Add this trigger to a worker
+		def addToWorker(worker, event)
+			Events.logger.debug {"Attching worker '#{worker.id}' to timer '#{id}'"}
+			@workers << WorkerData.new(worker, event)
+		end
+		
+		# Remove this trigger from a worker
+		def removeFromWorker(worker)
+			Events.logger.debug {"Removing worker '#{worker.id}' from timer '#{id}'"}
+			@workers.remove_if {|data| data.worker == worker}
 		end
 	end
 	
