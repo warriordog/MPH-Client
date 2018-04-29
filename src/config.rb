@@ -17,7 +17,7 @@ CFG_VERSION_APPLICATIONS = 0
 
 module Config
     #Config module logger
-    @@logger = Log.createLogger("Config")
+    @@logger = nil
     
     # Settings json data
     @@settings = nil
@@ -60,7 +60,7 @@ module Config
                 }
             }
             if (@@workers.empty?)
-                @@logger.warn "No workers loaded, please check your config"
+                Config.logger.warn "No workers loaded, please check your config"
             end
         end
         
@@ -85,21 +85,21 @@ module Config
                         # It's good!
                         return json
                     else
-                        @@logger.fatal("Outdated config file '#{path}', please update it.")
+                        Config.logger.fatal("Outdated config file '#{path}', please update it.")
                     end
                 else
-                    @@logger.fatal("Malformed config file '#{path}', check your JSON.")
+                    Config.logger.fatal("Malformed config file '#{path}', check your JSON.")
                 end
             rescue JSON::ParserError => ex
-                @@logger.fatal("JSON errors in '#{path}'.")
+                Config.logger.fatal("JSON errors in '#{path}'.")
                 
                 # Print specific JSON error
                 if (ex != nil)
-                    @@logger.fatal ex.message.gsub(/[\r\n]/, "\\n");
+                    Config.logger.fatal ex.message.gsub(/[\r\n]/, "\\n");
                 end
             end
         else
-            @@logger.fatal("Unable to access config file '#{path}'.")
+            Config.logger.fatal("Unable to access config file '#{path}'.")
         end
         
         # Return nil on error
@@ -132,5 +132,12 @@ module Config
     
     def self.applications()
         return @@applications
+    end
+    
+    def self.logger()
+        if (@@logger == nil)
+            @@logger = Log.createLogger("Log")
+        end
+        return @@logger
     end
 end

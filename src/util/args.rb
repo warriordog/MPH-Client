@@ -6,7 +6,7 @@ require 'util/log'
 
 module Args
 	# Fallback module logger
-    @@logger = Log.createLogger("Args", toFile: true, toConsole: true)
+    @@logger = nil
 	
 	# Finds and replaces arguments in a string
 	#   Arguments are identified in string by $(IDENTIFIER)
@@ -53,4 +53,11 @@ module Args
 			end
 		}
 	end
+    
+    def self.logger()
+        if (@@logger == nil)
+            @@logger = Log.createLogger("Util/Args")
+        end
+        return @@logger
+    end
 end

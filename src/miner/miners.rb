@@ -9,7 +9,7 @@ require 'util/application'
 
 module Miners
     # Module logger
-    @@logger = Log.createLogger("Miners")
+    @@logger = nil
     
     # Hash of ids -> miner
     @@miners = {}
@@ -82,7 +82,7 @@ module Miners
         
         # Add to hash
         if (@@miners[miner.id] != nil)
-            @@logger.warn("Duplicate miner #{miner.id}.")
+            Miners.logger.warn("Duplicate miner #{miner.id}.")
         end
         @@miners[miner.id] = miner
     end
@@ -97,6 +97,9 @@ module Miners
     end
     
     def self.logger()
+        if (@@logger == nil)
+            @@logger = Log.createLogger("Miners")
+        end
         return @@logger
     end
 end

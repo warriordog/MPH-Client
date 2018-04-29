@@ -7,7 +7,7 @@ require 'util/args'
 
 module Application
     # Module logger
-    @@logger = Log.createLogger("Application", toFile: true, toConsole: true)
+    @@logger = nil
 
     # Application map (id -> App)
     @@applications = {}
@@ -217,6 +217,9 @@ module Application
     end
     
     def self.logger()
+        if (@@logger == nil)
+            @@logger = Log.createLogger("Applications")
+        end
         return @@logger
     end
     

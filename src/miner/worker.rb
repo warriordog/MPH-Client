@@ -13,7 +13,7 @@ require 'util/application'
 module Wkr
 
     # Module logger
-    @@logger = Log.createLogger("Workers")
+    @@logger = nil
 
     # Hash of ids -> workers
     @@Workers = {}
@@ -441,6 +441,9 @@ module Wkr
     end
 
     def self.logger()
+        if (@@logger == nil)
+            @@logger = Log.createLogger("Worker")
+        end
         return @@logger
     end
     

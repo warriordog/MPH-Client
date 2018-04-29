@@ -3,7 +3,7 @@ require 'miner/event/events'
 # Triggers module
 module Triggers
     # Module logger
-    @@logger = Log.createLogger("Triggers", toFile: true, toConsole: true)
+    @@logger = nil
 
     # ID -> instance maps
     @@triggers = {}
@@ -275,6 +275,9 @@ module Triggers
     
     # Gets the events logger
     def self.logger()
+        if (@@logger == nil)
+            @@logger = Log.createLogger("Event/Triggers")
+        end
         return @@logger
     end
     

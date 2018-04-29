@@ -10,7 +10,7 @@ require 'miner/miners'
 # Events module
 module Events
     # Module logger
-    @@logger = Log.createLogger("Events", toFile: true, toConsole: true)
+    @@logger = nil
     
     # Event class
     class Event
@@ -60,6 +60,9 @@ module Events
     
     # Gets the events logger
     def self.logger()
+        if (@@logger == nil)
+            @@logger = Log.createLogger("Event/Events")
+        end
         return @@logger
     end
 end

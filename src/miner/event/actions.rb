@@ -3,7 +3,7 @@ require 'miner/event/events'
 # Actions module
 module Actions
     # Module logger
-    @@logger = Log.createLogger("Actions", toFile: true, toConsole: true)
+    @@logger = nil
 
     # ID -> instance maps
     @@actions = {}
@@ -280,6 +280,9 @@ module Actions
     
     # Gets the events logger
     def self.logger()
+        if (@@logger == nil)
+            @@logger = Log.createLogger("Event/Actions")
+        end
         return @@logger
     end
     
