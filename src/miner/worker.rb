@@ -190,25 +190,12 @@ module Wkr
                     minerHperS = miner.rate.to_f # Our rate in H/s
                     minerGHperS = minerHperS / 1000000000.0 # Our rate in Gh/s
                     
-                    # Calculate pool hashrate
-                    poolMHperS = MPH.parseRateMh(statCoin[:pool_hash]) # Pool rate in Mh/s
-                    poolGHperS = poolMHperS / 1000.0 # Pool rate in GH/s
-
-                    # Calculate pool profit
+                    # Raw profit (BTC/day per Gh/s)
                     rawProfit = statCoin[@profitField.to_sym].to_f # BTC / (Gh/s) / day
-                    poolProfit = rawProfit * poolGHperS # rawProfit * (Gh/s) * 1 day
-                    
-                    # Calculate miner profit
-                    # TODO add our hashrate if we aren't already mining
-                    hashratePercent = minerGHperS / poolGHperS  # percent of pool hashrate that is mine
-                    minerProfit = poolProfit * hashratePercent
-                    
-                    # Avoid crash when pool is not mininable (pool hashrate is zero -> division by zero -> NaN -> comparison failure later)
-                    if (minerProfit.nan?)
-                        # Set to -1 to diable mining non-minable pools
-                        minerProfit = -1.0
-                    end
-                    
+
+                    # This is way simpler than I thought
+                    minerProfit = rawProfit * minerGHperS
+
                     # Debug print profit
                     @logger.debug {"calculated profit for #{statCoin[:coin_name]} on #{miner.miner.id}: #{minerProfit}"}
                     
