@@ -157,7 +157,7 @@ module Wkr
             @name = name
             @id = id
             @profitField = profitField
-            @percentProfitThreshold = percentProfitThreshold
+            @percentProfitThreshold = percentProfitThreshold.to_f
             
             # Map algorithm ID -> workerAlgorithm@algos[Coins.Coins[statCoin[:coin_name]]
             @algos = algorithms
@@ -220,21 +220,6 @@ module Wkr
                 .each {|statCoin| statCoin[:CalculatedProfit] = calcProfit(statCoin)}
                 .sort {|a, b| b[:CalculatedProfit] <=> a[:CalculatedProfit]}
             ;
-            
-            #.select {|statCoin| @algos.any?{|id, wkrAlgo| wkrAlgo.algorithm.supportsCoin?(statCoin[:coin_name])}}
-            
-            # Debug print profit
-            #statCoins.each {|statCoin|
-            #    statProfit = statCoin[@profitField.to_sym]
-            #    wkrMiners = @algos[Coins.coins[statCoin[:coin_name]].algorithm.id].wkrMiners
-            #    wkrMiners.each {|m| 
-                    #gRate = m.rate.to_f / 1000000000.0
-                    #prof = m.rate.to_f * statProfit
-                    #gProf = gRate * statProfit
-                    #@logger.debug {"Profit for #{statCoin[:coin_name]} on #{m.miner.id}:  #{statProfit} * #{m.rate}H/s (#{gRate}GH/s) = #{prof} (#{gProf}))"}
-            #        
-            #    }
-            #}
             
             # Make sure there was at least one good coin
             if (!statCoins.empty?)
