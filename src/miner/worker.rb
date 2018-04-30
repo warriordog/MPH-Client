@@ -125,9 +125,7 @@ module Wkr
         end
         
         def stop()
-            if (running?)
-                @executor.stop()
-            end
+            @executor.stop()
         end
         
         def pause()

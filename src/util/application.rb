@@ -162,7 +162,7 @@ module Application
         end
         
         def stop()
-            if (alive?())
+            if (started?())
                 @app.logger.info "Termining #{@app.id}..."
                 
                 # Process.kill() is currently broken on windows.
