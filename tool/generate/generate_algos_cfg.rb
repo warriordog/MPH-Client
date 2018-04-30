@@ -18,7 +18,7 @@ if (resp['success'])
         algos[statCoin['algo'].downcase]['coins'][statCoin['coin_name']] = coin
     }
     
-    puts JSON.pretty_generate(algos.values, {:indent => '  '})
+    puts JSON.pretty_generate(algos, {:indent => '  '})
 else
     puts "Server returned error"
 end

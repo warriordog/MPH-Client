@@ -203,10 +203,16 @@ module Wkr
                     hashratePercent = minerGHperS / poolGHperS  # percent of pool hashrate that is mine
                     minerProfit = poolProfit * hashratePercent
                     
+                    # Avoid crash when pool is not mininable (pool hashrate is zero -> division by zero -> NaN -> comparison failure later)
+                    if (minerProfit.nan?)
+                        # Set to -1 to diable mining non-minable pools
+                        minerProfit = -1.0
+                    end
+                    
                     # Debug print profit
                     @logger.debug {"calculated profit for #{statCoin[:coin_name]} on #{miner.miner.id}: #{minerProfit}"}
                     
-                    return minerProfit
+                    return minerProfit.to_f
                 else
                     @logger.error("No miners for coin #{statCoin[:coin_name]}")
                 end
@@ -216,7 +222,7 @@ module Wkr
             end
             
             # If we could not calculate profit for some reason, then profit is -1
-            return -1
+            return -1.0
         end
         
         # Switch currently running algorithm based on current profit statistics
