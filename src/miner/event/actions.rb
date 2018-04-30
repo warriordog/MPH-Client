@@ -57,6 +57,9 @@ module Actions
                 # Log a custom action
                 when "log_custom"
                     return ActionLogCustom.new(id, action, args)
+                # Crash the worker
+                when "debug_crash"
+                    return ActionCrash.new(id, action, args)
                 else
                     Actions.logger.warn {"Unkown action id '#{action}' for action '#{id}'.  It will not be created."}
                     
@@ -275,6 +278,26 @@ module Actions
         # Override
         def execute(worker, vars)
             @logFunc.call(worker, vars)
+        end
+    end
+    
+    # Debug action to crash a worker
+    class ActionCrash < Action
+        def initialize(id, actionId, args)
+            super(id, actionId, args)
+            
+            if (args.include? :message)
+                @message = args[:message]
+            else
+                @message = nil
+            end
+        end
+        
+        def execute(worker, vars)
+            Actions.logger.warn "Debug crash activated for #{worker.id}"
+            
+            # Ka boom
+            raise @message
         end
     end
     
