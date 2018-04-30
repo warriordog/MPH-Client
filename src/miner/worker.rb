@@ -316,6 +316,17 @@ module Wkr
         def shutdown()
             @logger.debug {"Shutting down worker."}
             
+            # Stop workers
+            begin
+                if (@currentJob != nil)
+                    @currentJob.stop()
+                end
+            rescue Exception => e
+                @logger.warn "Exception stopping miner"
+                @logger.error e
+                @logger.error e.backtrace.join("\n\t")
+            end
+            
             # Call shutdown listeners
             fireEvent(:shutdown, {})
             

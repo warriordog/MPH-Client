@@ -30,24 +30,30 @@ module MPHClient
             
             logger.debug("Coin switch thread started - will update all miners every #{Config.settings[:switch_interval]} seconds.")
             while (running)
-                # download stats
-                stats = MPH.getMiningAndProfitsStatistics()
-                
-                # check stats
-                if (stats != nil)
-                    # switch (or not)
-                    workers.each {|w| w.switchAlgo(stats)}
-                
-                    # Sleep until next switch interval
-                    sleep Config.settings[:switch_interval]
-                else
-                    # Time until attempt to reconnect
-                    delay = Config.settings[:reconnect_interval]
+                begin
+                    # download stats
+                    stats = MPH.getMiningAndProfitsStatistics()
                     
-                    logger.error("Unable to get stats, stopping miners.  Trying again in #{delay} seconds.")
-                    workers.each {|w| w.stopMining()}
+                    # check stats
+                    if (stats != nil)
+                        # switch (or not)
+                        workers.each {|w| w.switchAlgo(stats)}
                     
-                    sleep delay
+                        # Sleep until next switch interval
+                        sleep Config.settings[:switch_interval]
+                    else
+                        # Time until attempt to reconnect
+                        delay = Config.settings[:reconnect_interval]
+                        
+                        logger.error("Unable to get stats, stopping miners.  Trying again in #{delay} seconds.")
+                        workers.each {|w| w.stopMining()}
+                        
+                        sleep delay
+                    end
+                rescue Exception => e
+                    @@rootLog.error "Exception in main loop"
+                    @@rootLog.error e
+                    @@rootLog.error e.backtrace.join("\n\t")
                 end
             end
         }
@@ -94,9 +100,19 @@ module MPHClient
                         # Load workers
                         workers = Wkr.loadWorkers()
                         
-                        # Start mining
-                        @@rootLog.info("Starting mine cycle.")
-                        runMainLoop(workers)
+                        begin
+                            # Start mining
+                            @@rootLog.info("Starting mine cycle.")
+                            runMainLoop(workers)
+                        ensure
+                            workers.each{ |w|
+                                begin
+                                    w.shutdown()
+                                # ignore exception since we already crashed
+                                rescue Exception => ignored
+                                end
+                            }
+                        end
                     else
                         @@rootLog.fatal("No workers were loaded.  Unable to mine.")
                     end
