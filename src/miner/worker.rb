@@ -163,6 +163,7 @@ module Wkr
             
             @events = events
             
+            @started = false
             @currentJob = nil
             
             # map of symbol id -> map of (id object -> proc)
@@ -170,6 +171,13 @@ module Wkr
             
             # If true, don't mine
             @paused = false
+            
+            # Finalizer (only called if worker is started)
+            Watchdog.addFinalizerBlock {
+                if (@started)
+                    self.shutdown()
+                end
+            }
         end
         
         # Add getters
@@ -304,6 +312,7 @@ module Wkr
         # Prepares this worker to start mining
         def startup()
             @logger.debug {"Starting up worker."}
+            @started = true
             
             # Apply triggers
             @events.each {|event| event.trigger.addToWorker(self, event)}
@@ -315,6 +324,7 @@ module Wkr
         # Prepares this worker to stop mining
         def shutdown()
             @logger.debug {"Shutting down worker."}
+            @started = false
             
             # Stop workers
             begin
@@ -323,7 +333,7 @@ module Wkr
                 end
             rescue Exception => e
                 @logger.error "Exception stopping miner"
-                @logger.error e
+                @logger.error e.message
                 @logger.error e.backtrace.join("\n\t")
             end
             

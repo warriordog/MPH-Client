@@ -18,6 +18,8 @@ module Watchdog
     # Eats the main thread and waits for exit
     #   Block will be called from the new "main thread"
     def self.eatMainThread(&block)
+        # Set name of main thread
+        Thread.current.name = "watchdog"
     
         # Set up logger
         @@logger = Log.createLogger("Watchdog")
@@ -29,19 +31,29 @@ module Watchdog
                 block.call
             end
         }
-        newMain.daemon = true
+        newMain.name = "main"
+        newMain.daemon = false
     
         # Wait for exit
         while (!@@nonDaemonThreads.empty?)
             @@nonDaemonThreads.each {|t|
                 begin
+                    @@logger.debug {"Waiting for '#{t.name}'"}
+                    
                     # Wait for exit
                     t.join
+                    
+                    # Delete thread when done
+                    @@nonDaemonThreads.delete t
+                rescue Interrupt => e
+                    # Ignore this - it comes from Ctrl-C and the like
+                    # Don't delete thread yet because we may need to wait more
                 rescue Exception => e
                     @@logger.error "Exception waiting for thread, it will be un-daemonized."
-                    @@logger.error e
+                    @@logger.error e.message
                     @@logger.error e.backtrace.join("\n\t")
                     
+                    # Delete from error
                     @@nonDaemonThreads.delete t
                 end
             }
@@ -54,21 +66,21 @@ module Watchdog
                 f.call
             rescue Exception => e
                 @@logger.error "Exception in finalizer"
-                @@logger.error e
+                @@logger.error e.message
                 @@logger.error e.backtrace.join("\n\t")
             end
         }
     end
 
-    def self.addDaemonThread(thread)
+    def self.addNonDaemonThread(thread)
         if (thread != nil)
-            @@nonDaemonThreads << thread
+            @@nonDaemonThreads |= [thread]
         end
     end
     
-    def self.removeDaemonThread(thread)
+    def self.removeNonDaemonThread(thread)
         if (thread != nil)
-            @@nonDaemonThreads -= thread
+            @@nonDaemonThreads.delete thread
         end
     end
     
@@ -78,7 +90,8 @@ module Watchdog
     
     def self.addFinalizer(finalizer)
         if (finalizer != nil)
-            @@finalizers << finalizer
+            # Add if not present
+            @@finalizers |= [finalizer]
         end
     end
     
@@ -97,10 +110,10 @@ Thread.class_eval {
             @is_daemon = is_daemon
             
             # Register or de-register
-            if (is_daemon)
-                Watchdog.addDaemonThread(self)
+            if (!is_daemon)
+                Watchdog.addNonDaemonThread(self)
             else
-                Watchdog.removeDaemonThread(self)
+                Watchdog.removeNonDaemonThread(self)
             end
         end
     end

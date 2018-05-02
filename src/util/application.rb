@@ -14,16 +14,18 @@ module Application
     
     # A registered, runnable application
     class App
-        def initialize(id, workingDir, executable, args)
+        def initialize(id, workingDir, executable, args, daemon, killOnExit)
             @id = id
             @workingDir = workingDir
             @executable = executable
             @args = args
+            @daemon = daemon
+            @killOnExit = killOnExit
             
             @logger = Log.createLogger("App/" + id, toFile: true, toConsole: true)
         end
         
-        attr_reader :id, :workingDir, :executable, :logger
+        attr_reader :id, :workingDir, :executable, :logger, :daemon, :killOnExit
         
         def args(context)
             if (context != nil && !context.empty?)
@@ -41,7 +43,18 @@ module Application
                     else
                         args = ""
                     end
-                    return App.new(id, json[:workingDir], json[:executable], args)
+                    
+                    daemon = true
+                    if (json.include? :daemon)
+                        daemon = json[:daemon]
+                    end
+                    
+                    koe = false
+                    if (json.include? :killOnExit)
+                        koe = json[:killOnExit]
+                    end
+                    
+                    return App.new(id, json[:workingDir], json[:executable], args, daemon, koe)
                 else
                     Application.logger.warn "Application '#{id}' is missing an executable.  It will not be created."
                 end
@@ -64,6 +77,18 @@ module Application
             
             # Monitor thread (may or may not have PID data, don't count on it)
             @thread = nil
+            
+            # Finalizer to make sure process ends (only used if killOnExit is true)
+            @finalizer = Proc.new {
+                if (self.alive?)
+                    @app.logger.info "Killing application for shutdown."
+                    self.stop()
+                end
+            }
+            
+            # Set daemon and KOE from app defaults
+            self.daemon = @app.daemon
+            self.killOnExit = @app.killOnExit
         end
         
         attr_reader :app, :pid
@@ -171,7 +196,7 @@ module Application
                     if (!system("taskkill /pid #{@pid}", :out => File::NULL, :err => File::NULL))
                         # Some processes must be forcefully killed
                         if (!system("taskkill /f /pid #{@pid}", :out => File::NULL, :err => File::NULL))
-                            @app.logger.error("Unable to stop miner!")
+                            @app.logger.error "Unable to stop application."
                         end
                     end
                 else
@@ -214,6 +239,22 @@ module Application
             if (started?)
                 # wait for the monitor thread to close
                 @thread.join
+            end
+        end
+        
+        # If false parent application will not exit until child application stops
+        def daemon=(daemon)
+            if (@thread != nil)
+                @thread.daemon = daemon
+            end
+        end
+        
+        # If true, child application will be terminated when parent stops
+        def killOnExit=(koe)
+            if (koe)
+                Watchdog.addFinalizer(@finalizer)
+            else
+                Watchdog.removeFinalizer(@finalizer)
             end
         end
     end

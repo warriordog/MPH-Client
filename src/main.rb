@@ -21,7 +21,7 @@ module MPHClient
 
     def self.runMainLoop(workers)
         running = true
-
+        
         # Startup workers
         workers.each {|worker| worker.startup()}
         
@@ -51,20 +51,33 @@ module MPHClient
                         
                         sleep delay
                     end
+                rescue Interrupt => i
+                    # Interrupt just breaks us out of timer loop
                 rescue Exception => e
                     @@rootLog.error "Exception in main loop"
-                    @@rootLog.error e
+                    @@rootLog.error e.message
                     @@rootLog.error e.backtrace.join("\n\t")
                 end
             end
         }
+        timerThread.name = "timer"
+        timerThread.daemon = false
         
-        # add new stuff here
+        # Make sure we can stop
+        Signal.trap("INT") {
+            #@@rootLog.info "Interrupt recieved, shutting down."
+            
+            running = false
+            
+            # Stop timer
+            timerThread.raise Interrupt.new
+        }
         
-        # Wait for all threads to end
+        # Wait for timer to exit (which means we are shutting down)
         timerThread.join()
         
-        # Shut down workers
+        # Shut down
+        @@rootLog.info "Shutting down."
         workers.each {|worker| worker.shutdown()}
     end
     
@@ -101,19 +114,9 @@ module MPHClient
                         # Load workers
                         workers = Wkr.loadWorkers()
                         
-                        begin
-                            # Start mining
-                            @@rootLog.info("Starting mine cycle.")
-                            runMainLoop(workers)
-                        ensure
-                            workers.each{ |w|
-                                begin
-                                    w.shutdown()
-                                # ignore exception since we already crashed
-                                rescue Exception => ignored
-                                end
-                            }
-                        end
+                        # Start mining
+                        @@rootLog.info("Starting mine cycle.")
+                        runMainLoop(workers)
                     else
                         @@rootLog.fatal("No workers were loaded.  Unable to mine.")
                     end
