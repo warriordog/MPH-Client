@@ -322,7 +322,7 @@ module Wkr
                     @currentJob.stop()
                 end
             rescue Exception => e
-                @logger.warn "Exception stopping miner"
+                @logger.error "Exception stopping miner"
                 @logger.error e
                 @logger.error e.backtrace.join("\n\t")
             end

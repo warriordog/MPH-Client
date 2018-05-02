@@ -4,8 +4,9 @@
 # MPH-Client main source file
 #-----------------------------
 
-require 'config'
+require 'util/watchdog'
 require 'util/log'
+require 'config'
 require 'miner/worker'
 require 'miner/coins'
 require 'miner/miners'
@@ -136,5 +137,8 @@ end
 # Main entry point
 #
 
-MPHClient.start()
+# Start watchdog and start running
+Watchdog.eatMainThread() {
+    MPHClient.start()
+}
 
