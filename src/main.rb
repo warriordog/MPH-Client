@@ -4,9 +4,9 @@
 # MPH-Client main source file
 #-----------------------------
 
+require 'config'
 require 'util/watchdog'
 require 'util/log'
-require 'config'
 require 'miner/worker'
 require 'miner/coins'
 require 'miner/miners'
@@ -97,6 +97,7 @@ module MPHClient
                         
                         # Create "real" root logger
                         @@rootLog = Log.createLogger("root")
+                        @@rootLog.info "Starting up."
                     
                         # Load applications
                         Application.loadApps()
@@ -114,9 +115,12 @@ module MPHClient
                         # Load workers
                         workers = Wkr.loadWorkers()
                         
-                        # Start mining
-                        @@rootLog.info("Starting mine cycle.")
-                        runMainLoop(workers)
+                        # Start watchdog and start running
+                        Watchdog.eatMainThread() {
+                            # Start mining
+                            @@rootLog.info("Starting mine cycle.")
+                            runMainLoop(workers)
+                        }
                     else
                         @@rootLog.fatal("No workers were loaded.  Unable to mine.")
                     end
@@ -140,8 +144,5 @@ end
 # Main entry point
 #
 
-# Start watchdog and start running
-Watchdog.eatMainThread() {
     MPHClient.start()
-}
 
